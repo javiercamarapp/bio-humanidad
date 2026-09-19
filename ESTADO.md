@@ -31,7 +31,7 @@ preparación no publicable,50 casos ciegos pendientes. Hashes comprobados y fuen
 originales intactas. El vigilante real se detuvo en MAX_VUELTAS; esta corrida precedió
 al chequeo adicional de hash del snapshot, probado después con fixtures y hashes reales.
 
-Se añadieron20 pruebas sin alterar las183 anteriores. No existe todavía integración
+Se añadieron22 pruebas sin alterar las183 anteriores. No existe todavía integración
 real con Ollama (no instalado/no disponible), ni clientes de analista/refutador. Esos
 componentes requieren definir/autorizarlos; tener prompts históricos no los completa.
 El detector actual no satisface automáticamente feeds semanales tras esperar90 días:
@@ -45,7 +45,7 @@ python3.12 -m unittest discover -s tests -v
 python3 -m unittest discover -s tests -p test_flujo_completo.py -v
 ```
 
-Última verificación local: **203 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
+Última verificación local: **205 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
 saltó ninguna prueba anterior. El E2E usa comandos CLI reales en un temporal:
 
 1. Demo sintética sin red → preparación y hashes íntegros.

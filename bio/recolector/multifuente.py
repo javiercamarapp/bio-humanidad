@@ -128,6 +128,8 @@ def parsear_feed(raw, fuente, observado):
                 published = datetime.fromisoformat((item.findtext(atom + 'published') or '').replace('Z', '+00:00'))
             if published.tzinfo is None:
                 raise ValueError('fecha de publicación sin zona horaria')
+            if published.astimezone(timezone.utc) > obs:
+                raise ValueError('instante de publicación posterior a la observación')
             literal = ''.join(title.itertext()).strip() if title is not None else ''
             if not 0 < len(literal) <= 4096:
                 raise ValueError('titular vacío o demasiado largo')

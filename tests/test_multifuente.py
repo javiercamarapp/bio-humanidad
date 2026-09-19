@@ -56,6 +56,14 @@ class MultifuenteTests(unittest.TestCase):
             self.assertEqual(rows, [])
             self.assertEqual(meta['descartadas'], 1)
 
+    def test_publicacion_futura_dentro_del_mismo_dia(self):
+        for raw in (RSS.replace(b'18 Sep 2026 12:00:00', b'19 Sep 2026 23:00:00'),
+                    ATOM.replace(b'2026-09-17T02:00:00Z', b'2026-09-19T23:00:00Z')):
+            with self.subTest(raw=raw[:30]):
+                rows, meta = m.parsear_feed(raw, 'ecdc', OBS)
+                self.assertEqual(rows, [])
+                self.assertEqual(meta['descartadas'], 1)
+
     def test_limite_items_y_feed_antiguo_visibles(self):
         item = RSS.split(b'<item>')[1].split(b'</item>')[0]
         raw = b'<rss><channel>' + b''.join(b'<item>'+item.replace(b'/a',('/a'+str(i)).encode())+b'</item>' for i in range(4)) + b'</channel></rss>'

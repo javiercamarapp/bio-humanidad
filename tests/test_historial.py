@@ -48,6 +48,16 @@ class HistorialTests(unittest.TestCase):
         with self.assertRaises(ValueError): historial.ejecutar([a,b], self.root/'out')
         self.assertFalse((self.root/'out/manifest.json').exists())
 
+    def test_conflictos_no_se_ocultan_al_deduplicar_cada_archivo(self):
+        for tipo in ('id', 'contenido'):
+            with self.subTest(tipo=tipo):
+                a=self.archivo('a', [fila('a', observado='2026-09-18T12:00:00Z'), fila('b')])
+                contradiccion = (fila('b', url='https://example.org/b') if tipo=='id' else
+                                  dict(fila('c'), claim_literal='Fixture contradictorio'))
+                b=self.archivo('b', [contradiccion])
+                with self.assertRaises(ValueError): historial.ejecutar([a,b], self.root/tipo)
+                self.assertFalse((self.root/tipo/'manifest.json').exists())
+
     def test_salida_existente_symlink_y_limites(self):
         a=self.archivo('a', [fila()])
         historial.ejecutar([a], self.root/'out')

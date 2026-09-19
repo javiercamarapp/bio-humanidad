@@ -23,8 +23,12 @@
 - Descargas hijas necesitan cierre propio si el recolector muere: añadido watchdog
   de plazo/padre que termina solo su proceso. Pruebas reales sin red de timeout y
   muerte del padre; no modificar el manejador legacy que mata solo su hijo.
-- 203 pruebas OK localmente por versión;12 archivos de pruebas previas idénticos
+- 205 pruebas OK localmente por versión;12 archivos de pruebas previas idénticos
   a afa99ad. Fixtures y mocks no se presentan como integraciones de modelos reales.
 - urllib puede leer sin límite el cuerpo de una redirección antes de seguirla:
   se rechazan también las redirecciones del mismo host. Los endpoints reales probados
   son directos. Regresión comprueba que no se lee ese cuerpo; no se elude bloqueo web.
+- Primera revisión: deduplicar cada snapshot ocultaba conflictos conjuntos; ahora se
+  conservan todas las filas para validar antes de deduplicar. También se compara el
+  instante completo de publicación con observación antes de truncar a fecha. Cuatro
+  fallos sintéticos reproducidos en rojo, dos pruebas nuevas; suite205 OK por versión.

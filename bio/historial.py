@@ -13,6 +13,7 @@ import sys
 import json
 
 from bio import radar
+from bio.json_estricto import cargar
 from bio.preparacion import escribir_json, jsonl
 from bio.vigilar import leer, ruta_segura
 
@@ -35,9 +36,10 @@ def ejecutar(entradas, salida):
         size += len(raw)
         if not raw.strip() or size > MAX_BYTES:
             raise ValueError('entrada vacía o suma superior a10MB')
-        parsed = radar.parsear_jsonl(raw.decode('utf-8'))
+        parsed = [cargar(line) for line in raw.decode('utf-8').splitlines() if line.strip()]
+        unique_in_source = len(radar.normalizar(parsed))  # Valida, pero NO descarta originales.
         rows.extend({key: row[key] for key in CAMPOS} for row in parsed)
-        sources.append((path, raw, len(parsed)))
+        sources.append((path, raw, unique_in_source))
     normalized = radar.normalizar(rows)
     if not normalized or len(normalized) > MAX_REGISTROS:
         raise ValueError('se requieren de1 a5000 señales únicas')
