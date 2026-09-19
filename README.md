@@ -20,12 +20,23 @@ Empieza por [`00-LEEME.md`](00-LEEME.md).
 | 07 | [Pitch deck](07-PITCH-DECK.md) |
 | 08 | [Guía paso a paso](08-GUIA-PASO-A-PASO.md) |
 | 09 | [Blueprint](09-BLUEPRINT.md) |
+| 10 | [Operar el bucle de validación](10-OPERACION-BUCLE.md) |
+| 11 | [Pipeline de preparación offline](11-PREPARACION-OFFLINE.md) |
 
 ## Código
 ```bash
 python3 -m bio.recolector.recolector --salida datos/senales/senales.jsonl
 python3 -m bio.validador.validar salidas/hipotesis/ --rubrica
+python3 -m bio.preparacion --salida salidas/preparacion/mi-corrida --corte 2026-09-20
+python3 -m bio.bucle --max-vueltas 200 --max-segundos 900
+python3 -m unittest discover -s tests -v
 ```
 
+Usa una carpeta nueva y el corte UTC apropiado para cada preparación.
+`PREPARACION_COMPLETA` no significa validación científica: revisa `estado_validacion`.
+
 ## Estado
-Fase 0. Recolector funcionando. Sin banco húmedo. Sin contratos.
+Fase 0. Recolector de HN, radar léxico offline, extractor de referencia por reglas,
+evaluador de categorías y ejecutor acotado implementados. Sin modelos conectados,
+sin banco húmedo ni contratos. La revisión humana y la historia multifuente siguen
+pendientes: no hay alertas científicamente validadas ni publicación automática.

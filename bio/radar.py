@@ -130,7 +130,9 @@ def preparar(registros: list[dict], salida: Path, cantidad: int = 50, semilla: s
                          "No se proponen etiquetas ni severidad a partir de un titular."],
     }
     salida.mkdir(parents=True, exist_ok=False)
-    campos = ["id", "fuente", "fecha", "url", "claim_literal", "categoria_humana", "clase", "nota", "revisor", "revisado_en"]
+    campos = ["id", "fuente", "fecha", "url", "claim_literal", "categoria_humana",
+              "severidad_humana", "origen_etiqueta", "fecha_revision", "revisor",
+              "clase", "nota", "revisado_en"]
     with (salida / "revision.csv").open("x", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=campos, quoting=csv.QUOTE_ALL)
         writer.writeheader()
