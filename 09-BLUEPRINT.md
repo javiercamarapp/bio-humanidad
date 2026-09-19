@@ -8,14 +8,19 @@ La forma completa del programa, en una página. Une `03`, `04` y `05` en un sist
 
 > El cribado biológico pregunta *"¿se parece a algo peligroso?"*.
 > La defensa necesita preguntar *"¿hace algo peligroso?"*.
-> Nadie ha resuelto la segunda pregunta, y es resoluble.
+> Son preguntas de investigación, no capacidades demostradas por este proyecto.
+
+**Diseño histórico, no especificación del producto actual.** El alcance operativo
+open source está descrito en el README. No se construyen predictores de peligrosidad
+ni priorizadores de variantes evasivas.
 
 ## Modelo de amenaza
 
 Una IA baja el costo de diseñar, adquirir o soltar una amenaza biológica. Los cuellos
 de botella existentes —síntesis de ADN, conocimiento, materiales, diseminación— se
-estrechan donde había barreras de conocimiento, no de física. **La barrera de física
-es el cribado de síntesis, y esa barrera tiene un agujero de 1-3% medido.** `[V]`
+estrechan donde había barreras de conocimiento. El cribado no es una barrera física.
+Las cifras históricas de esta propuesta proceden de una fuente periodística
+secundaria y no se han verificado como riesgo biológico real. `[P]`
 
 ## Los cuatro pilares
 

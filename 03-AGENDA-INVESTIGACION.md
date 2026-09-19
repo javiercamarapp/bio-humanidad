@@ -6,14 +6,14 @@ El hallazgo que abre todo, y las direcciones que salen de él.
 
 ## HALLAZGO 0 — El "0-day biológico": el cribado de ADN es de forma, no de función
 
-**Marca:** `[V]` — verificado en fuente primaria pública.
+**Marca:** `[P]` — resumen histórico de una fuente periodística secundaria. No se
+ha cotejado aquí el estudio original. No es un hallazgo propio ni validación biológica.
 
 **Qué pasó.** Un equipo liderado por Microsoft descubrió y reportó una
 vulnerabilidad no reconocida ("biological 0-day") en los programas que examinan
-las compras de ADN. El sistema existente detecta amenazas por **similitud de
-secuencia y de estructura**. La vulnerabilidad: las herramientas de diseño de
-proteínas por IA ya pueden tomar una toxina conocida y diseñar una proteína con la
-**misma función** pero lo bastante distinta como para que el cribado no la marque.
+las compras de ADN, según la nota citada. El reporte describe límites del cribado
+por similitud de secuencia y estructura. **No demuestra que las variantes conservaran
+función biológica**; no se debe deducir actividad peligrosa de una similitud predicha.
 
 **Evidencia concreta.** Partiendo de 72 toxinas, generaron ~75.000 variantes con
 tres paquetes de diseño de proteínas de código abierto y las pasaron por **cuatro
@@ -46,10 +46,9 @@ AI-designed proteins", 3-oct-2025 (John Timmer).
 
 ### Por qué esto es el hallazgo que ayuda
 
-Porque es **un hueco real, verificable, publicado y sin resolver del todo**. No es
-un escenario hipotético: es un 1-3% medido de evasión residual en software que
-protege a la humanidad. Y el propio estudio nombra lo que falta: **una señal de
-función, no de forma.**
+Es una motivación para revisar evidencia y controles defensivos, no un resultado
+del proyecto. Las cifras descritas son de un reporte secundario; falta cotejar
+método, población, mitigaciones y alcance. No representan una tasa de daño biológico.
 
 ---
 
@@ -59,7 +58,8 @@ función, no de forma.**
 > La defensa necesita preguntar *"¿hace algo peligroso?"*, aunque no se parezca a nada.
 
 La primera pregunta es la que la IA puede eludir por diseño. La segunda es
-mucho más difícil y **nadie la ha resuelto**. Ahí está el trabajo.
+mucho más difícil. No se afirma que nadie la haya resuelto ni que este software
+pueda hacerlo: el producto abierto trabaja con metadatos públicos y trazabilidad.
 
 ---
 
@@ -67,29 +67,14 @@ mucho más difícil y **nadie la ha resuelto**. Ahí está el trabajo.
 
 Cada una con hipótesis falsable, prueba, lo que la mata y costo.
 
-### D1 — Cribado por función, no por forma
+### D1 y D2 — Fuera del producto abierto
 
-- **Hipótesis:** un predictor de actividad (no de estructura) reduce la evasión
-  residual del cribado muy por debajo del 1-3% publicado, a costo de cómputo aceptable.
-- **Prueba:** sobre un banco de evasores conocidos, medir el área bajo la curva del
-  predictor contra cada uno de los cuatro cribadores actuales.
-- **La mata:** que el predictor no supere a la similitud estructural, o que solo
-  funcione en las toxinas del conjunto de entrenamiento.
-- **Costo:** cómputo, sin banco húmedo. Meses, no años.
-- **Riesgo dual-use:** **alto**. Es un clasificador de función. Por decisión de
-  `01-ALCANCE`, **no lo construye este programa solo**: se hace en consorcio con
-  supervisión estatal, o se contribuye con datos y evaluación a quien ya lo hace.
-
-### D2 — Priorizar qué validar en húmedo
-
-- **Hipótesis:** para un lote de variantes generadas, existe un subconjunto pequeño
-  (≤1%) que concentra casi toda la probabilidad de ser funcional y evasor; ordenarlo
-  permite que un laboratorio real valide con pocos cientos de pruebas en vez de 75.000.
-- **Prueba:** comparar el orden propuesto contra un conjunto pequeño ya validado en húmedo.
-- **La mata:** que el orden no correlacione con la función real mejor que el azar.
-- **Costo:** cómputo + un banco húmedo pequeño y con licencia.
-- **Riesgo dual-use:** **medio**. Es priorización defensiva, pero sirve a ambos lados.
-  Requiere revisión.
+La propuesta original mencionaba predicción de función y priorización experimental.
+**No se implementarán aquí clasificadores de peligrosidad, selección de variantes
+funcionales/evasivas ni optimización del cribado mediante evasión.** Este repositorio
+no distribuye secuencias, protocolos húmedos ni instrucciones para síntesis. Cualquier
+investigación especializada requiere una evaluación institucional independiente;
+no es una fase que el bucle de este proyecto pueda aprobar.
 
 ### D3 — Radar de biosurveilancia multi-fuente
 
@@ -136,5 +121,6 @@ Cada una con hipótesis falsable, prueba, lo que la mata y costo.
 | 4 | **D2 — Priorización** | Necesita socio húmedo |
 | 5 | **D1 — Función** | Solo con consorcio y supervisión |
 
-**D1 es el hallazgo grande. Y es precisamente la que no se hace en solitario.** Ese
-es el precio de hacerlo bien.
+El orden de arriba es una propuesta histórica, no compromisos de implementación.
+El alcance del producto abierto se limita a preparación, calidad de datos y metadatos;
+D1 y D2 no son tareas pendientes que un agente pueda activar.

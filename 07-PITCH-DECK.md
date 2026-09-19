@@ -10,10 +10,10 @@ si se desea versión visual.
 *El cribado biológico pregunta "¿se parece a algo peligroso?". Nosotros preguntamos "¿hace algo peligroso?".*
 
 ## Slide 2 — El problema
-Los sistemas que protegen la humanidad de amenazas biológicas criban **por forma,
-no por función**. Un equipo liderado por Microsoft demostró que las herramientas de
-diseño de proteínas por IA pueden generar toxinas funcionales que evaden el cribado.
-Tras los parches, queda un **1-3% de evasión residual**. `[V]`
+Un reporte periodístico describe limitaciones de herramientas de cribado por
+similitud. **No hemos verificado el estudio original ni demostrado funcionalidad
+biológica**. Sus cifras no deben presentarse como riesgo real ni como hallazgo del
+proyecto. `[P]` Véase `referencias/HALLAZGO-0DAY.md`.
 
 ## Slide 3 — Por qué ahora
 - El diseño de proteínas por IA pasó de teórico a práctico.
@@ -36,8 +36,8 @@ Evidencia biológica **verificable por terceros**:
 | Informe de preparación | política, filantropía | análisis puro |
 
 ## Slide 6 — Tracción (honesta)
-- Hallazgo documentado y citable que define el problema.
-- Pipeline reproducible de costo <$50/mes.
+- Software de preparación y pruebas reproducibles; no descubrimiento científico.
+- Pipeline offline sin llamadas de pago; costo futuro de modelos no medido.
 - Corpus de trabajo previo: catálogo de incidentes y evals (referencia `ai humanidad`).
 - **Lo que no tenemos:** validación húmeda, contratos. Se dice, no se esconde.
 

@@ -17,8 +17,8 @@
 python3 -m unittest discover -s tests -v
 ```
 
-Última ejecución local: **137 pruebas, OK**, también en una exportación limpia de
-`84155d3`. Se usan fixtures sintéticos y temporales, no un conjunto dorado inventado.
+Última ejecución local: **140 pruebas, OK**, incluida la demo offline. La tanda anterior también se
+verificó en una exportación limpia de `84155d3`. Se usan fixtures sintéticos y temporales, no un conjunto dorado inventado.
 Una revisión independiente repitió la suite y no encontró defectos altos/medios en
 el importador. Se comprobó también una carrera real de ocho procesos: un único
 importador publicó el archivo completo sin alterar las entradas.
@@ -51,7 +51,10 @@ reproducibilidad de predicciones y conservación de los datos originales.
 Código, pruebas, prompts, documentación y este resumen agregado están versionados.
 `datos/**` y `salidas/**` permanecen ignorados salvo los archivos explícitos de esquema
 y estructura. No se publican datos crudos, CSV de revisores, aprobaciones humanas,
-cachés ni credenciales. No se cambió la visibilidad privada del repositorio.
+cachés ni credenciales. La apertura del repositorio fue solicitada expresamente por
+su titular; se añadió MIT para código/documentación propia y se escaneó el historial
+con Gitleaks (16 commits en el control previo, sin secretos detectados). Los nombres
+y correos de autor de los commits forman parte del historial publicado.
 
 ## Continuación operativa
 
