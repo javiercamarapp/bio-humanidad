@@ -233,6 +233,69 @@ class VigilarTests(unittest.TestCase):
                 self.assertNotIn('informe', self.registros()[0])
                 self.assertEqual(json.loads((self.salida / 'estado.json').read_text())['informes'], [])
 
+    def test_checkpoint_final_revalida_presupuesto_y_retroceso(self):
+        persistir = vigilar.json_atomico
+        for salto, motivo in ((60, 'PRESUPUESTO'), (-60, 'RELOJ_RETROCEDIO')):
+            with self.subTest(salto=salto):
+                self.salida = self.root / ('final-' + str(salto))
+                wall, fired = [1000.0], [False]
+                def lento(path, data):
+                    persistir(path, data)
+                    if path.name == 'estado.json' and data.get('estado') == 'DETENIDO' and not fired[0]:
+                        fired[0] = True
+                        wall[0] += salto
+                with mock.patch.object(vigilar.time, 'time', side_effect=lambda: wall[0]), \
+                        mock.patch.object(vigilar, 'json_atomico', side_effect=lento):
+                    result = self.ejecutar(max_segundos=2)
+                self.assertTrue(fired[0])
+                self.assertEqual(result['motivo_final'], motivo)
+                self.assertEqual(result['informes'], [])
+                self.assertEqual(self.registros()[0]['estado'], motivo)
+                self.assertNotIn('informe', self.registros()[0])
+                self.assertEqual(json.loads((self.salida / 'estado.json').read_text()), result)
+                if salto < 0:
+                    self.assertEqual(result['codigo_salida'], 2)
+
+    def test_checkpoint_final_tardio_conserva_vueltas_ya_cerradas(self):
+        persistir = vigilar.json_atomico
+        wall, fired = [1000.0], [False]
+        def lento(path, data):
+            persistir(path, data)
+            if data.get('estado') == 'DETENIDO' and not fired[0]:
+                fired[0] = True
+                wall[0] += 60
+        with mock.patch.object(vigilar.time, 'time', side_effect=lambda: wall[0]), \
+                mock.patch.object(vigilar, 'json_atomico', side_effect=lento), \
+                mock.patch.object(vigilar, 'corte_utc', side_effect=['2026-09-20', '2026-09-21']):
+            result = self.ejecutar(max_vueltas=2, max_segundos=5)
+        self.assertEqual(result['motivo_final'], 'PRESUPUESTO')
+        self.assertEqual(result['informes'], ['ciclo-001/preparacion'])
+        self.assertEqual([r['estado'] for r in self.registros()], ['PREPARACION_COMPLETA', 'PRESUPUESTO'])
+
+    def test_fallo_checkpoint_no_conserva_informe_provisional(self):
+        persistir = vigilar.json_atomico
+        for fase in ('EN_CURSO', 'DETENIDO'):
+            for salto in (60, -60, 0):
+                with self.subTest(fase=fase, salto=salto):
+                    self.salida = self.root / (fase + str(salto))
+                    wall, fired = [1000.0], [False]
+                    def fallar(path, data):
+                        if (path.name == 'estado.json' and data.get('estado') == fase
+                                and data.get('informes') and not fired[0]):
+                            fired[0] = True
+                            wall[0] += salto
+                            raise OSError('FIXTURE fallo recuperable de persistencia')
+                        persistir(path, data)
+                    with mock.patch.object(vigilar.time, 'time', side_effect=lambda: wall[0]), \
+                            mock.patch.object(vigilar, 'json_atomico', side_effect=fallar):
+                        result = self.ejecutar(max_segundos=2)
+                    self.assertTrue(fired[0])
+                    self.assertEqual(result['informes'], [])
+                    self.assertEqual(result['codigo_salida'], 2)
+                    self.assertNotIn('informe', self.registros()[0])
+                    self.assertTrue(self.registros()[0]['error'])
+                    self.assertEqual(json.loads((self.salida / 'estado.json').read_text()), result)
+
     def test_crash_inesperado_del_padre_persiste_error_no_exito(self):
         with mock.patch.object(vigilar, 'subproceso', side_effect=RuntimeError('crash fixture')):
             result = self.ejecutar(sin_red=False, entrada=None, max_vueltas=24)

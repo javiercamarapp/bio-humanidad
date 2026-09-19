@@ -125,6 +125,8 @@ def cargar_intentos(run: Path) -> list[dict]:
     for path in sorted((run / 'intentos').iterdir()):
         if path.name.startswith('.'):
             continue  # Snapshot incompleto tras crash: no está comprometido.
+        if os.path.lexists(path / '.confirmacion-pendiente'):
+            raise ValueError('confirmación pendiente tras interrupción; inspección manual requerida')
         sin_enlaces(path / 'registro.json', run)
         sin_enlaces(path / 'candidato.md', run)
         if not re.fullmatch(r'\d{6}-[a-f0-9]{64}', path.name):
@@ -193,6 +195,7 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
         elapsed_anchor = max(0, wall_anchor - config['inicio'], previous.get('tiempo_consumido', 0))
         last_wall = max(config['inicio'], previous.get('ultima_observacion_reloj', config['inicio']))
         rollback = wall_anchor < last_wall
+        ultimo_intento = None  # Solo el intento en cierre de esta invocación.
 
         def tiempos():
             nonlocal last_wall, rollback
@@ -203,8 +206,28 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
                           elapsed_anchor + time.monotonic() - monotonic_anchor)
             return elapsed, rollback
 
-        def finish(reason, details=()):
-            elapsed, _ = tiempos()
+        def confirmar_ultimo():
+            if ultimo_intento is not None:
+                path = run / 'intentos' / f"{ultimo_intento['numero']:06d}-{ultimo_intento['sha256']}"
+                marker = path / '.confirmacion-pendiente'
+                if marker.is_symlink() or not marker.is_file() or marker.stat().st_size == 0:
+                    raise ValueError('confirmación pendiente dañada o no materializada; inspección manual')
+                marker.unlink()
+
+        def invalidar_ultimo(reason):
+            if ultimo_intento is not None and ultimo_intento['estado'] == 'ACEPTADA':
+                ultimo_intento.update(estado='ERROR', estado_previo='ACEPTADA',
+                                     motivos=list(ultimo_intento['motivos']) + [reason])
+                path = run / 'intentos' / f"{ultimo_intento['numero']:06d}-{ultimo_intento['sha256']}"
+                json_atomico(path / 'registro.json', ultimo_intento)
+
+        def finish(reason, details=(), verificar=True):
+            elapsed, backward = tiempos()
+            temporal = 'RELOJ_RETROCEDIO' if backward else (
+                'PRESUPUESTO' if elapsed >= config['max_segundos'] else None)
+            if ultimo_intento is not None and temporal:
+                invalidar_ultimo(temporal)
+                reason = temporal
             accepted = sum(a['estado'] == 'ACEPTADA' for a in attempts)
             report = dict(corrida=str(run), motivo_parada=reason, detalles=list(details),
                           vueltas=len(attempts), aceptadas=accepted,
@@ -215,6 +238,16 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
                           gasto_api_usd=0, proceso_activo=None if reason == 'EN_CURSO' else False,
                           limites={k: config[k] for k in ('max_vueltas', 'max_segundos', 'sin_mejora', 'timeout_vuelta')})
             json_atomico(run / 'estado.json', report)
+            if verificar and ultimo_intento is not None:
+                elapsed, backward = tiempos()
+                temporal = 'RELOJ_RETROCEDIO' if backward else (
+                    'PRESUPUESTO' if elapsed >= config['max_segundos'] else None)
+                if temporal:
+                    invalidar_ultimo(temporal)
+                    # Segunda escritura solo invalida, nunca acepta ni reinicia presupuesto.
+                    return finish(temporal, details, verificar=False)
+            if reason != 'EN_CURSO':
+                confirmar_ultimo()
             return report
 
         def guardias():
@@ -240,6 +273,8 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
                 break
             no_improvement += 1
         for candidate in files:
+            confirmar_ultimo()
+            ultimo_intento = None  # Las vueltas ya cerradas conservan su resultado.
             blocked = guardias()
             if blocked:
                 return finish(*blocked)
@@ -283,12 +318,27 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             if elapsed >= config['max_segundos']:
                 result = dict(estado='ERROR', motivos=['presupuesto de tiempo agotado durante intento'])
             result.update(numero=number, sha256=digest, candidato=candidate.name)
+            # El registro por sí solo no prueba que sus checkpoints terminaron.
+            # Un fallo deja este marcador y bloquea la recuperación, sin borrar evidencia.
+            with (pending / '.confirmacion-pendiente').open('xb') as marker:
+                marker.write(b'Pendiente de confirmar persistencia y guardias.\n')
+                marker.flush()
+                os.fsync(marker.fileno())
             json_atomico(pending / 'registro.json', result)
+            elapsed, backward = tiempos()
+            if backward or elapsed >= config['max_segundos']:
+                result.update(estado_previo=result['estado'], estado='ERROR',
+                              motivos=list(result['motivos']) + [
+                                  'RELOJ_RETROCEDIO' if backward else 'PRESUPUESTO'])
+                json_atomico(pending / 'registro.json', result)
             pending.rename(run / 'intentos' / f'{number:06d}-{digest}')
             attempts.append(result)
+            ultimo_intento = result
             seen.add(digest)
             no_improvement = 0 if result['estado'] == 'ACEPTADA' else no_improvement + 1
-            finish('EN_CURSO')  # Checkpoint; proceso_activo no es un detector de PID.
+            checkpoint = finish('EN_CURSO')  # Checkpoint, no detector de PID.
+            if checkpoint['motivo_parada'] != 'EN_CURSO':
+                return checkpoint
             if result['estado'] in {'ESCALAR_HUMANO', 'PENDIENTE_HUMANO', 'PENDIENTE_RED'}:
                 return finish(result['estado'], result['motivos'])
         elapsed, backward = tiempos()

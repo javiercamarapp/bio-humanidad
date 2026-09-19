@@ -41,7 +41,12 @@ construcción o cambios de código mientras está activo.
   presupuesto conservadoramente; un retroceso observado causa `RELOJ_RETROCEDIO`.
 - Los resultados de hijos terminados fuera de presupuesto no se incorporan a
   `informes`. Pueden quedar archivos parciales: no borrarlos ni confundirlos con una
-  entrega aceptada por el vigilante.
+  entrega aceptada por el vigilante. El presupuesto se comprueba también después de
+  persistir el checkpoint final: se invalida una entrega tardía del último ciclo,
+  conservando los informes de vueltas ya cerradas. Un checkpoint observado mientras
+  la invocación sigue viva es provisional. Si falla una escritura de checkpoint, la
+  entrega pendiente se retira y se intenta persistir el error una vez. Un disco que
+  continúa fallando puede impedir guardar ese diagnóstico; el comando no certifica éxito.
 - Tres errores consecutivos detienen la corrida. Una recolección parcial no pasa
   silenciosamente a preparación, aunque el recolector haya guardado algunos titulares.
 - `MAX_VUELTAS`, `PRESUPUESTO`, STOP o señal terminan la ejecución. Un timeout de hijo

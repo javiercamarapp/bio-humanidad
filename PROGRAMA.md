@@ -1,5 +1,38 @@
 # Programa de ejecución — fase operativa
 
+## Tanda de cierre integral — 2026-09-19, 19:49 UTC
+
+Nueva solicitud: cerrar de punta a punta la entrega técnica y la integración pendiente.
+Alcance ya construido: radar público HN, preparación, revisión/importación, evaluación,
+consumidor de candidatos y vigilante finito. No ampliar a investigación científica,
+modelos, fuentes adicionales ni producción sanitaria por inferencia.
+
+- Presupuesto: 40 minutos, hasta 3 correcciones funcionales y 2 revisiones independientes
+  de 5 minutos cada una, concurrencia de revisores 1; sin APIs de pago ni compras.
+  Revisores por sesión ChatGPT existente de Codex; puede consumir su cuota, no se cambia
+  facturación. Máximo 1 ingesta de red de 1 vuelta/90 s y 2 pruebas operativas offline.
+- Métrica: defectos bloqueantes reproducidos pendientes, dirección descendente; guardia
+  fija `python3 -m unittest discover -s tests -v` en 3.9 y 3.12 sin eliminar, debilitar
+  ni saltar pruebas existentes. Añadir regresiones o integración donde falte evidencia.
+- Revisor: copia aislada solo de archivos versionados dentro de `salidas/verificacion/`,
+  con temporales escribibles. Sin datos reales, acceso a otros proyectos ni mutaciones
+  de fuentes. Contrastar hashes para detectar cualquier modificación del revisor.
+- Mutables: correcciones de defectos demostrados en `bio/`, nuevas pruebas y documentación;
+  protegidos: datos, etiquetas/aprobaciones humanas, reglas de alcance, pruebas anteriores.
+- Retener solo cambios con regresión verde y suite completa; retirar únicamente el
+  parche propio fallido, sin resets destructivos ni eliminar evidencia de fallos.
+- Parar por 2 intentos consecutivos sin mejora, presupuesto, conflicto concurrente,
+  permisos o gate humano. No activar un daemon ni dejar el loop sin límite.
+- Integración: revalidar PR #1 hacia `main`; solo integrar tras revisión independiente
+  sin bloqueantes, pruebas locales y checks remotos verdes del SHA exacto. Sin forzar,
+  usar privilegios de administrador ni modificar protecciones. Comprobar CI en `main`
+  tras integrar; conservar las ramas y datos locales.
+- Terminado técnico: flujo sintético E2E verificable, corrida operativa no publicable,
+  documentación utilizable, entrega humana local preparada, PR integrada y CI remoto.
+  No equivale a precisión científica ni a 50 etiquetas humanas completadas. Esos gates
+  solo los resuelve una persona; comprobar que permanecen cerrados.
+
+
 ## Tanda de continuación — 2026-09-19, 18:54 UTC
 
 Alcance: terminar `bio.vigilar` (ingesta pública y preparación, no investigación).

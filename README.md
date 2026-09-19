@@ -133,7 +133,19 @@ primarias o estructura predicha con funcionalidad demostrada. Véase
 python3 -m unittest discover -s tests -v
 ```
 
-La suite usa fixtures temporales, sin red ni datos reales. CI está configurado para
+La suite usa fixtures temporales, sin red ni datos reales. Para comprobar el flujo
+completo por CLI (demo → revisión → importación simulada → evaluación → gates):
+
+```bash
+python3 -m unittest discover -s tests -p test_flujo_completo.py -v
+```
+
+Las etiquetas de esa prueba están rotuladas como **fixtures sintéticos** y solo
+existen en su temporal. No completan el dorado humano del proyecto ni miden calidad
+científica. La prueba comprueba también que una revisión incompleta no se importa,
+que no se sobrescribe un dorado existente y que importar no aprueba candidatos.
+
+CI está configurado para
 Python 3.9 y 3.12 en GitHub Actions, con permisos de lectura y acciones fijadas por SHA.
 Consulta el badge y [ESTADO.md](ESTADO.md): las pruebas locales no sustituyen a un
 job remoto que no llegó a ejecutarse. Los runners estándar de repos públicos suelen

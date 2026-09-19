@@ -158,6 +158,8 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
                  red_habilitada=not sin_red, publicable=False, gasto_api_usd=0,
                  reanudacion_soportada=False, proceso_activo=True)
     motivo = 'ERROR'
+    record = None
+    entrega_pendiente = False
     previous_key = None
     codigo_inicial = huellas_codigo()
     state['codigo_sha256'] = codigo_inicial
@@ -167,6 +169,15 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
                      segundos_transcurridos=reloj.segundos())
         ruta_segura(run / 'estado.json')
         json_atomico(run / 'estado.json', state)
+
+    def descartar_entrega_por_error(reason):
+        if entrega_pendiente and record and 'informe' in record:
+            informe_pendiente = record.pop('informe')
+            if informe_pendiente in state['informes']:
+                state['informes'].remove(informe_pendiente)
+            record.update(estado=reason, error=True,
+                          detalle='falló la persistencia de la entrega; no está confirmada')
+            json_atomico(ciclo / 'registro.json', record)
 
     def detener():
         if evento.is_set():
@@ -273,6 +284,7 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
                                     raise ValueError('manifiesto inválido')
                                 record['estado'] = 'PREPARACION_COMPLETA'
                                 record['informe'] = str(informe.relative_to(run))
+                                entrega_pendiente = True
                                 previous_key = key
                 reason = detener()
                 if reason:
@@ -318,6 +330,7 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
             if state['vueltas'] >= max_vueltas:
                 motivo = 'MAX_VUELTAS'
                 break
+            entrega_pendiente = False  # Vuelta cerrada antes de empezar la espera.
             siguiente = min(max_segundos, reloj.segundos() + intervalo_segundos)
             state['siguiente_lectura'] = time.time() + siguiente - reloj.segundos()
             guardar('ESPERANDO')
@@ -333,6 +346,7 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
         state['errores'] += 1
         state['detalle'] = type(exc).__name__ + ': ' + str(exc)
         motivo = 'ERROR' if isinstance(exc, (OSError, ValueError, TypeError)) else 'ERROR_INESPERADO'
+        descartar_entrega_por_error(motivo)
     finally:
         if motivo == 'RELOJ_RETROCEDIO' and not state['errores']:
             state['errores'] += 1
@@ -340,7 +354,29 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
                      codigo_salida=2 if state['errores'] else 0)
         state.pop('siguiente_lectura', None)
         try:
-            guardar('DETENIDO')
+            try:
+                guardar('DETENIDO')
+            except Exception as exc:
+                state['errores'] += 1
+                state['detalle'] = type(exc).__name__ + ': ' + str(exc)
+                motivo = 'ERROR'
+                state.update(motivo_final=motivo, codigo_salida=2)
+                descartar_entrega_por_error(motivo)
+                # Un único intento de persistir el error, no una aceptación.
+                guardar('DETENIDO')
+            reason = detener()
+            if reason and reason != motivo:
+                # El último checkpoint también es I/O: no cerrar con entrega tardía.
+                # Las vueltas ya cerradas antes de una espera conservan sus informes.
+                if motivo == 'MAX_VUELTAS' and record and 'informe' in record:
+                    state['informes'].remove(record.pop('informe'))
+                    record['estado'] = reason
+                    json_atomico(ciclo / 'registro.json', record)
+                if reason == 'RELOJ_RETROCEDIO' and not state['errores']:
+                    state['errores'] += 1
+                state.update(motivo_final=reason, codigo_salida=2 if state['errores'] else 0)
+                # Solo se persiste una invalidación; no hay reintento ni aceptación nueva.
+                guardar('DETENIDO')
         finally:
             for sig, handler in anteriores.items():
                 signal.signal(sig, handler)

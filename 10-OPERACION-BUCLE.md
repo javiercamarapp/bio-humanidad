@@ -118,6 +118,19 @@ presupuesto global: para una corrida operativa usa siempre `bio.bucle`.
   de vida; consulta el proceso para conocer su estado durante una ejecución.
 
 Los intentos no se borran. Un historial inconsistente se detiene para revisión manual.
+Las escrituras de registros y checkpoints (incluido el final) también consumen el
+presupuesto. Si el último intento excede el tiempo o se observa retroceso del reloj
+mientras se persiste, se conserva como `ERROR`, con `estado_previo` y el motivo;
+no cuenta como aceptado ni al reanudar. Las vueltas cerradas previamente se conservan.
+Los checkpoints son provisionales mientras la invocación sigue ejecutándose. Cada
+intento nuevo lleva `.confirmacion-pendiente` hasta completar sus guardias y escrituras.
+Si una escritura falla o el proceso muere antes de confirmar, la reanudación devuelve
+`ERROR_ESTADO` por confirmación pendiente, en lugar de recuperar una aceptación dudosa.
+El marcador no se elimina automáticamente al reanudar: conservar toda la evidencia,
+inspeccionar y comenzar otra corrida tras la revisión pertinente. **No borrar el
+marcador para forzar una aceptación.** Un SIGKILL/apagado o disco averiado todavía puede
+impedir persistir el estado final: no interpretar el JSON de un intento aislado como
+una entrega confirmada.
 Si terminó la cola pero hubo errores de ejecución, el estado es
 `COLA_AGOTADA_CON_ERRORES` y el código de salida es 2, no éxito silencioso.
 El dorado, revisiones y estado rechazan claves JSON repetidas y números no finitos:
