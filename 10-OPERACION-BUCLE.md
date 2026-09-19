@@ -80,11 +80,23 @@ python3 -m bio.bucle --reanudar salidas/bucle/ID_DE_CORRIDA
 ```
 
 Se utiliza la configuración original. Las opciones de presupuesto/red nuevas no
-alteran una reanudación. Cada ejecución mide tiempo con reloj monotónico; la
-reanudación conserva además el tiempo ya consumido y la última observación del reloj
-civil. Si este retrocede respecto al último checkpoint, se detiene con
+alteran una reanudación. Se conserva el origen monotónico de la corrida, no solo el
+último checkpoint: un fallo de escritura no devuelve tiempo al reanudar. Se verifica
+el identificador de arranque (Linux `/proc/sys/kernel/random/boot_id`; macOS
+`kern.bootsessionuuid`). Otro arranque, un origen inválido o una corrida antigua sin
+esa información bloquean reanudación y requieren inspección, sin reiniciar el presupuesto.
+Se conserva además la última observación durable del reloj civil. Si este retrocede respecto al último checkpoint, se detiene con
 `RELOJ_RETROCEDIO` sin aceptar el intento pendiente. Si cambias código, etiquetas o revisiones, comienza una
 corrida nueva, sin `--reanudar`. No edites `config.json` para eludir las guardias.
+
+**Guardia conservadora adicional:** si el último registro del historial es `ACEPTADA`,
+la reanudación se bloquea para inspección, incluso cuando el marcador ya no existe.
+Ausencia de marcador no acredita que terminó la confirmación bajo fallos combinados.
+No se borran ni degradan los registros previos: una ejecución finalizada conserva su
+informe, pero no se reconstruye automáticamente una aceptación final al recuperar.
+Para continuar tras inspección, iniciar explícitamente otra corrida; no quitar esta
+guardia ni editar el estado para forzar recuperación. Historiales cuyo último intento
+no está aceptado siguen sujetos al resto de controles y al presupuesto original.
 
 Modo sin consultas HTTP:
 
@@ -131,6 +143,15 @@ inspeccionar y comenzar otra corrida tras la revisión pertinente. **No borrar e
 marcador para forzar una aceptación.** Un SIGKILL/apagado o disco averiado todavía puede
 impedir persistir el estado final: no interpretar el JSON de un intento aislado como
 una entrega confirmada.
+La eliminación del marcador también se comprueba contra el presupuesto y el reloj.
+Si termina tarde, se restaura el bloqueo antes de invalidar el intento; si la
+invalidación falla, no se permite recuperarlo como aceptado. Solo se limpia nuevamente
+tras persistir un veredicto no aceptado. Un error de eliminación, incluso posterior a
+eliminar físicamente el archivo, restaura el bloqueo o intenta dejar `ERROR` durable.
+Fallos permanentes del disco pueden impedir ambas escrituras: en ese caso no hay
+certificación de recuperación y se requiere inspección, no reanudación automática.
+Los límites son cooperativos en los puntos de control: no prometen tiempo real duro
+ni interrumpir una operación del filesystem mientras el sistema está suspendido.
 Si terminó la cola pero hubo errores de ejecución, el estado es
 `COLA_AGOTADA_CON_ERRORES` y el código de salida es 2, no éxito silencioso.
 El dorado, revisiones y estado rechazan claves JSON repetidas y números no finitos:

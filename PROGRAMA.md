@@ -1,5 +1,26 @@
 # Programa de ejecución — fase operativa
 
+## Tanda de protocolo de confirmación — 2026-09-19, 20:53 UTC
+
+Nueva solicitud de continuar hasta cerrar. Presupuesto local declarado antes de ejecutar:
+30 minutos, corrección del protocolo del issue #2, sin ingesta ni APIs de pago. Tras
+la primera revisión y reproducciones nuevas, se declaró una segunda y última revisión
+del diseño ampliado, hasta5 minutos, dentro del mismo techo de30 minutos. No se repitió
+el mismo código buscando aprobación. Evidencia y enmienda originales:
+`salidas/verificacion/correccion-confirmacion-20260919-2053/PROGRAMA.md`.
+
+Guardias: mantener las171 pruebas previas, agregar regresiones en rojo, suites3.9/3.12,
+ninguna etiqueta humana inventada. Diseño: confirmar dentro del presupuesto incluyendo
+limpieza, restaurar bloqueo ante error/cancelación, no recuperar automáticamente una
+cola ACEPTADA, conservar origen monotónico e identificador de arranque entre procesos.
+Arranque cambiado/no verificable bloquea, nunca renueva presupuesto.
+
+Resultado:180 pruebas locales OK por versión. Revisión final: NO INTEGRAR por consulta
+de arranque denegada en su sandbox; lógica comprobada con arranque simulado, no sustituto
+del E2E real. No cambiar permisos ni agotar revisores para obtener verde. Publicar el
+parche mediante push no forzado a la PR borrador; no integrar mientras falte completar
+esa revisión y verificar CI del SHA exacto. Mantener datos e históricos intactos.
+
 ## Tanda de cierre integral — 2026-09-19, 19:49 UTC
 
 Nueva solicitud: cerrar de punta a punta la entrega técnica y la integración pendiente.

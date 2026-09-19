@@ -26,7 +26,7 @@ python3.12 -m unittest discover -s tests -v
 python3 -m unittest discover -s tests -p test_flujo_completo.py -v
 ```
 
-Última verificación local: **171 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
+Última verificación local: **180 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
 saltó ninguna prueba anterior. El E2E usa comandos CLI reales en un temporal:
 
 1. Demo sintética sin red → preparación y hashes íntegros.
@@ -81,6 +81,34 @@ Se verificó por SHA-256 que los 54 archivos de la copia del revisor coincidían
 árbol original congelado; no hubo mutaciones de código/tests. Evidencia local:
 `salidas/verificacion/confirmacion-final-20260919-2039/`.
 
+### Corrección del protocolo y recuperación conservadora
+
+La continuación posterior añadió 9 pruebas nuevas sin tocar las 171 anteriores.
+La eliminación tardía del marcador devuelve ahora `PRESUPUESTO`, **0 aceptadas y
+0 al reanudar**; también se cubren retroceso, error antes/después de eliminar,
+invalidación fallida y cancelación. Primero se observaron las regresiones en rojo.
+
+La primera revisión del parche detectó fallos transitorios combinados y devolución de
+presupuesto monotónico tras un checkpoint fallido. Se reprodujeron antes de ampliar el
+diseño: una cola `ACEPTADA` requiere inspección al recuperar, aun sin marcador; se
+conservan los registros, no se infiere aprobación. El origen monotónico persiste junto
+al identificador de arranque: un reinicio del equipo o un origen no verificable bloquea
+reanudación. Estas restricciones, incluida su incidencia en cierres aparentemente limpios,
+están documentadas en la guía 10.
+
+La segunda revisión no reprodujo aceptación indebida y verificó la lógica con un
+arranque simulado (40 pruebas), además del presupuesto entre procesos. Su dictamen es
+**NO INTEGRAR por verificación incompleta**: el sandbox denegó
+`sysctl kern.bootsessionuuid`; las dos suites allí terminaron con 1 fallo y 48 errores.
+No se rebajan permisos para obtener verde ni se presenta esa simulación como E2E real.
+En el entorno local soportado, sin simular la consulta de arranque, las **180 pruebas
+pasan en ambos Python**. Falta cerrar la revisión con evidencia de un entorno compatible.
+
+Se cotejaron los 55 archivos de ambas copias aisladas: sin modificaciones del revisor;
+la segunda coincidía con el árbol antes de esta actualización documental. Evidencia:
+`salidas/verificacion/correccion-confirmacion-20260919-2053/`. No se solicita una tercera
+revisión dentro de esta tanda ni se transforma el dictamen en aprobación propia.
+
 ## Operación real y entrega humana
 
 ```bash
@@ -127,14 +155,16 @@ se modifica facturación, visibilidad, permisos o identidad. La rama remota se c
 antes del push no forzado y se valida el SHA exacto antes de integrar.
 
 CI histórico de `5b67f62`: [35464112714](https://github.com/javiercamarapp/bio-humanidad/actions/runs/35464112714),
-**164 pruebas OK en Python 3.9 y 3.12**. CI del nuevo código `2145079`:
+**164 pruebas OK en Python 3.9 y 3.12**. CI histórico del código `2145079`:
 [35466883303](https://github.com/javiercamarapp/bio-humanidad/actions/runs/35466883303),
 **success**. `gh run view 35466883303 --log` muestra `Ran 171 tests` / `OK` en ambos jobs
 (3.9: 11.977 s; 3.12: 12.129 s). No es una inferencia del verde local.
 
 La PR sigue **OPEN / draft**: no hubo integración; `main` permanece en `18b7088`.
-Antes de integrar hay que resolver el bloqueante del issue #2 y revisar el diseño;
-el CI verde actual no habilita esa integración. Después, comprobar el workflow de `main` en
+La reproducción del issue #2 y sus variantes ya están cubiertas por regresiones, pero
+falta completar la verificación independiente en un entorno que permita consultar el
+identificador de arranque. Los checks de la PR muestran el CI del SHA vigente; un CI
+verde por sí solo no sustituye el dictamen pendiente. Después de integrar, comprobar el workflow de `main` en
 [Actions](https://github.com/javiercamarapp/bio-humanidad/actions/workflows/tests.yml).
 
 ## Privacidad y presupuesto
@@ -151,6 +181,12 @@ código. Ejecutadas **3/3 correcciones funcionales**, una prueba E2E nueva, **2/
 1/1 corrida de red y 2/2 corridas operativas offline. Parada por agotamiento de ese
 presupuesto, con la integración bloqueada por revisión final y los gates humanos aún
 pendientes. No es un loop infinito ni investigación desatendida.
+
+Tanda adicional autorizada: 30 minutos, dos revisiones como máximo (la segunda se
+declaró antes de ejecutarla tras ampliar el diseño por evidencia). Sin red de ingesta,
+APIs de pago ni modificaciones a etiquetas. Terminó con 180 pruebas locales OK y
+revisión final limitada por el entorno; no se integró. El presupuesto y la enmienda
+se conservaron en el directorio local de evidencia indicado arriba.
 
 ## Qué NO está demostrado ni se puede completar automáticamente
 

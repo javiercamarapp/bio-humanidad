@@ -9,6 +9,7 @@ import datetime as dt
 import fcntl
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -148,6 +149,21 @@ def limites_validos(config: dict):
             raise ValueError(f'{key} debe estar entre 1 y {cap}')
 
 
+def id_arranque() -> str:
+    """Identifica el origen del reloj monotónico; nunca trasladarlo entre arranques."""
+    try:
+        if sys.platform == 'linux':
+            value = Path('/proc/sys/kernel/random/boot_id').read_text()
+        elif sys.platform == 'darwin':
+            value = subprocess.run(['/usr/sbin/sysctl', '-n', 'kern.bootsessionuuid'],
+                                   capture_output=True, text=True, check=True, timeout=2).stdout
+        else:
+            raise ValueError('plataforma sin identificador de arranque soportado')
+        return str(uuid.UUID(value.strip()))
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        raise ValueError('no se puede verificar el identificador de arranque') from exc
+
+
 def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
              timeout_vuelta=30, sin_red=False, reanudar: Path | None = None) -> dict:
     root = root.resolve()
@@ -173,7 +189,8 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
         except BlockingIOError:
             raise ValueError('otra ejecución posee el bloqueo de esta corrida')
         if reanudar is None:
-            config.update(inicio=time.time(), protegidos=huellas_protegidas(root), root=str(root))
+            config.update(inicio=time.time(), inicio_monotonic=time.monotonic(),
+                          arranque=id_arranque(), protegidos=huellas_protegidas(root), root=str(root))
             json_atomico(run / 'config.json', config)
             (run / 'intentos').mkdir()
         else:
@@ -183,19 +200,31 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             limites_validos(config)
             if config['root'] != str(root):
                 raise ValueError('la corrida pertenece a otro proyecto')
+            if config.get('arranque') != id_arranque():
+                raise ValueError('arranque distinto o no verificable; inspección manual requerida')
         attempts = cargar_intentos(run)
+        if reanudar is not None and attempts and attempts[-1]['estado'] == 'ACEPTADA':
+            # Ausencia de marcador no prueba que el último cierre terminó sin error.
+            # No reconstruir aprobaciones en una recuperación ambigua.
+            raise ValueError('aceptación final sin prueba durable de cierre; inspección manual requerida')
         wall_anchor = time.time()
         monotonic_anchor = time.monotonic()
+        origin = config.get('inicio_monotonic')
+        if (type(origin) not in (int, float) or not math.isfinite(origin)
+                or monotonic_anchor < origin):
+            raise ValueError('origen monotónico inválido; inspección manual requerida')
         previous = {}
         if (run / 'estado.json').exists():
             sin_enlaces(run / 'estado.json', root)
             if (run / 'estado.json').stat().st_size == 0:
                 raise ValueError('estado vacío: posible placeholder')
             previous = cargar((run / 'estado.json').read_text())
-        elapsed_anchor = max(0, wall_anchor - config['inicio'], previous.get('tiempo_consumido', 0))
+        elapsed_anchor = max(0, wall_anchor - config['inicio'],
+                             monotonic_anchor - origin, previous.get('tiempo_consumido', 0))
         last_wall = max(config['inicio'], previous.get('ultima_observacion_reloj', config['inicio']))
         rollback = wall_anchor < last_wall
         ultimo_intento = None  # Solo el intento en cierre de esta invocación.
+        ultimo_confirmado = False
 
         def tiempos():
             nonlocal last_wall, rollback
@@ -206,13 +235,49 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
                           elapsed_anchor + time.monotonic() - monotonic_anchor)
             return elapsed, rollback
 
+        def bloquear_confirmacion(marker, reason):
+            # Incluso unlink puede fallar DESPUÉS de eliminar el archivo.
+            # Restablecer el bloqueo antes de cualquier invalidación susceptible de fallar.
+            if not os.path.lexists(marker):
+                try:
+                    with marker.open('xb') as stream:
+                        stream.write(b'Confirmacion incompleta; inspeccion requerida.\n')
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                except OSError:
+                    # Si no se pudo restaurar el marcador, intentar dejar ERROR durable.
+                    # Fallos permanentes del disco no permiten certificar recuperación.
+                    invalidar_ultimo(reason)
+                    raise
+
         def confirmar_ultimo():
-            if ultimo_intento is not None:
-                path = run / 'intentos' / f"{ultimo_intento['numero']:06d}-{ultimo_intento['sha256']}"
-                marker = path / '.confirmacion-pendiente'
+            nonlocal ultimo_confirmado
+            if ultimo_intento is None or ultimo_confirmado:
+                return None
+            path = run / 'intentos' / f"{ultimo_intento['numero']:06d}-{ultimo_intento['sha256']}"
+            marker = path / '.confirmacion-pendiente'
+
+            def eliminar():
                 if marker.is_symlink() or not marker.is_file() or marker.stat().st_size == 0:
                     raise ValueError('confirmación pendiente dañada o no materializada; inspección manual')
                 marker.unlink()
+
+            try:
+                eliminar()
+            except BaseException:
+                # Restaurar también ante Ctrl+C/SystemExit, sin consumir la cancelación.
+                bloquear_confirmacion(marker, 'ERROR_CONFIRMACION')
+                raise
+            elapsed, backward = tiempos()
+            temporal = 'RELOJ_RETROCEDIO' if backward else (
+                'PRESUPUESTO' if elapsed >= config['max_segundos'] else None)
+            if temporal:
+                bloquear_confirmacion(marker, temporal)
+                invalidar_ultimo(temporal)
+                # La limpieza ya no confirma ACEPTADA: ERROR u otro veredicto no aceptado.
+                eliminar()
+            ultimo_confirmado = True
+            return temporal
 
         def invalidar_ultimo(reason):
             if ultimo_intento is not None and ultimo_intento['estado'] == 'ACEPTADA':
@@ -247,7 +312,9 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
                     # Segunda escritura solo invalida, nunca acepta ni reinicia presupuesto.
                     return finish(temporal, details, verificar=False)
             if reason != 'EN_CURSO':
-                confirmar_ultimo()
+                temporal = confirmar_ultimo()
+                if temporal:
+                    return finish(temporal, details, verificar=False)
             return report
 
         def guardias():
@@ -273,7 +340,9 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
                 break
             no_improvement += 1
         for candidate in files:
-            confirmar_ultimo()
+            temporal = confirmar_ultimo()
+            if temporal:
+                return finish(temporal, verificar=False)
             ultimo_intento = None  # Las vueltas ya cerradas conservan su resultado.
             blocked = guardias()
             if blocked:
@@ -334,6 +403,7 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             pending.rename(run / 'intentos' / f'{number:06d}-{digest}')
             attempts.append(result)
             ultimo_intento = result
+            ultimo_confirmado = False
             seen.add(digest)
             no_improvement = 0 if result['estado'] == 'ACEPTADA' else no_improvement + 1
             checkpoint = finish('EN_CURSO')  # Checkpoint, no detector de PID.
