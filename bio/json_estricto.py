@@ -2,6 +2,8 @@
 import json
 import math
 
+MAX_PROFUNDIDAD = 64
+
 
 def _objeto(pares):
     resultado = {}
@@ -31,7 +33,19 @@ def _entero(valor):
 
 def cargar(texto):
     try:
-        return json.loads(texto, object_pairs_hook=_objeto, parse_constant=_no_finito,
-                          parse_float=_real, parse_int=_entero)
+        resultado = json.loads(texto, object_pairs_hook=_objeto, parse_constant=_no_finito,
+                               parse_float=_real, parse_int=_entero)
+        # La profundidad de json.loads cambia entre versiones de Python. Impone
+        # nuestro límite sin depender de RecursionError ni recurrir otra vez.
+        pendientes = [(resultado, 0)]
+        while pendientes:
+            valor, nivel = pendientes.pop()
+            if isinstance(valor, (dict, list)):
+                nivel += 1
+                if nivel > MAX_PROFUNDIDAD:
+                    raise ValueError('JSON supera la profundidad permitida')
+                hijos = valor.values() if isinstance(valor, dict) else valor
+                pendientes.extend((hijo, nivel) for hijo in hijos if isinstance(hijo, (dict, list)))
+        return resultado
     except RecursionError as exc:
         raise ValueError('JSON supera la profundidad permitida') from exc

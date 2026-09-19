@@ -1,6 +1,6 @@
 import unittest
 
-from bio.json_estricto import cargar
+from bio.json_estricto import MAX_PROFUNDIDAD, cargar
 
 
 class JsonEstrictoTests(unittest.TestCase):
@@ -24,6 +24,12 @@ class JsonEstrictoTests(unittest.TestCase):
             cargar('1' * 1001)
         with self.assertRaises(ValueError):
             cargar('[' * 1500 + '0' + ']' * 1500)
+
+    def test_limite_de_profundidad_explicito_y_portable(self):
+        cargar('[' * MAX_PROFUNDIDAD + '0' + ']' * MAX_PROFUNDIDAD)
+        with self.assertRaises(ValueError):
+            cargar('[' * (MAX_PROFUNDIDAD + 1) + '0' + ']' * (MAX_PROFUNDIDAD + 1))
+        self.assertEqual(cargar('"' + '[' * 100 + '"'), '[' * 100)
 
     def test_misma_clave_en_objetos_distintos_es_valida(self):
         self.assertEqual(cargar('[{"a":1},{"a":2}]'), [{'a': 1}, {'a': 2}])
