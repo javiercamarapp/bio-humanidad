@@ -1,5 +1,23 @@
 # Programa de ejecución — fase operativa
 
+## Cierre de portabilidad y CI — 2026-09-19, 21:49 UTC
+
+Nueva solicitud de continuar. Techo declarado:20min, una revisión de hasta5min, sin
+ingesta ni APIs de pago. Antes de revisar, la suite real detectó E2E intermitente en
+macOS3.9: origen monotónico privado del proceso. Se declaró un único parche acotado,
+se reprodujo en rojo y se sustituyó por CLOCK_MONOTONIC compartido; tres pruebas nuevas,
+ninguna anterior debilitada. La enmienda previa y evidencia permanecen en
+`salidas/verificacion/cierre-ci-20260919-2149/PROGRAMA.md`.
+
+183 pruebas reales OK por Python, local y CI del código e00f0e7. El revisor no encontró
+otro bloqueo de código; exigió probar identidad del árbol del merge CI. Se descargó
+ese objeto y se verificó igualdad exacta del árbol38aced91ce1bf514ec06fd8d57bd3b8a8fbf6b58.
+Condición satisfecha sin repetir revisores, simular CI ni cambiar permisos. Bajo la
+autorización existente: integrar PR1 hacia main con SHA esperado, sin admin ni force;
+comprobar CI de la documentación final y del main resultante, conservar ramas/datos.
+No más parches en esta tanda. Detener ante checks fallidos, cambios concurrentes,
+falta de permisos o gate humano. Las50 etiquetas reales continúan pendientes.
+
 ## Tanda de protocolo de confirmación — 2026-09-19, 20:53 UTC
 
 Nueva solicitud de continuar hasta cerrar. Presupuesto local declarado antes de ejecutar:

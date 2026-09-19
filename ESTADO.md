@@ -1,4 +1,4 @@
-# Estado verificable — entrega técnica en revisión, 2026-09-19
+# Estado verificable — entrega técnica, 2026-09-19
 
 ## Qué entrega el software
 
@@ -26,7 +26,7 @@ python3.12 -m unittest discover -s tests -v
 python3 -m unittest discover -s tests -p test_flujo_completo.py -v
 ```
 
-Última verificación local: **180 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
+Última verificación local: **183 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
 saltó ninguna prueba anterior. El E2E usa comandos CLI reales en un temporal:
 
 1. Demo sintética sin red → preparación y hashes íntegros.
@@ -102,12 +102,39 @@ arranque simulado (40 pruebas), además del presupuesto entre procesos. Su dicta
 `sysctl kern.bootsessionuuid`; las dos suites allí terminaron con 1 fallo y 48 errores.
 No se rebajan permisos para obtener verde ni se presenta esa simulación como E2E real.
 En el entorno local soportado, sin simular la consulta de arranque, las **180 pruebas
-pasan en ambos Python**. Falta cerrar la revisión con evidencia de un entorno compatible.
+pasaron en esas corridas de ambos Python**. La continuación siguiente detectó una
+intermitencia entre procesos que esas corridas verdes no habían descartado.
 
 Se cotejaron los 55 archivos de ambas copias aisladas: sin modificaciones del revisor;
 la segunda coincidía con el árbol antes de esta actualización documental. Evidencia:
 `salidas/verificacion/correccion-confirmacion-20260919-2053/`. No se solicita una tercera
 revisión dentro de esta tanda ni se transforma el dictamen en aprobación propia.
+
+### Portabilidad del reloj y cierre de trazabilidad
+
+Una nueva suite real falló en el E2E de Python3.9/macOS: `time.monotonic()` tenía
+referencia por proceso. Se reprodujo el error con dos procesos de distinta edad antes
+de corregirlo. `bio.reloj` usa ahora `clock_gettime(CLOCK_MONOTONIC)` con origen común;
+la configuración identifica ese formato y rechaza corridas antiguas sin reinterpretarlas.
+Se añadieron tres regresiones, sin cambiar métodos de prueba anteriores: **183 OK** en
+3.9.6 y3.12.14. La CLI real se inició con3.9 y reanudó con3.12 conservando tiempo y
+`DORADO_PENDIENTE`, cero vueltas/aceptaciones; no se simularon datos humanos.
+
+Código revisado: `e00f0e76676b6a0d9f167938992d5b35e22d4a5f`. CI real:
+[35471805979](https://github.com/javiercamarapp/bio-humanidad/actions/runs/35471805979),
+**183 OK en ambos jobs**, incluidos E2E y procesos reales. El revisor contrastó esos
+logs sin exigir permisos adicionales a su sandbox. No encontró otro bloqueo de código;
+su único pendiente fue demostrar identidad entre el merge probado por CI y el head.
+
+Se descargó el commit CI `ffbe720375a8d27df807bb7550e326e3753d5ba5` y se comprobó con
+`git rev-parse SHA^{tree}` que ambos árboles son exactamente
+`38aced91ce1bf514ec06fd8d57bd3b8a8fbf6b58`. También se cotejaron los56 archivos de la
+copia revisada, sin mutaciones. Queda satisfecha la condición concreta del dictamen;
+el revisor indicó que no hacía falta repetir pruebas al acreditar esa igualdad.
+No es una aprobación científica ni un permiso derivado solo de CI verde.
+
+Evidencia local: `salidas/verificacion/cierre-ci-20260919-2149/`, incluidos dictamen,
+regresiones rojas, logs reales, manifiesto y `trazabilidad-ci.json`.
 
 ## Operación real y entrega humana
 
@@ -160,11 +187,10 @@ CI histórico de `5b67f62`: [35464112714](https://github.com/javiercamarapp/bio-
 **success**. `gh run view 35466883303 --log` muestra `Ran 171 tests` / `OK` en ambos jobs
 (3.9: 11.977 s; 3.12: 12.129 s). No es una inferencia del verde local.
 
-La PR sigue **OPEN / draft**: no hubo integración; `main` permanece en `18b7088`.
-La reproducción del issue #2 y sus variantes ya están cubiertas por regresiones, pero
-falta completar la verificación independiente en un entorno que permita consultar el
-identificador de arranque. Los checks de la PR muestran el CI del SHA vigente; un CI
-verde por sí solo no sustituye el dictamen pendiente. Después de integrar, comprobar el workflow de `main` en
+La condición pendiente del contraste independiente quedó resuelta por igualdad exacta
+de árboles, como se detalla arriba. La PR y sus comentarios registran la integración y
+el SHA final; sus checks y el workflow de `main` son la referencia vigente, no los
+verdes históricos. No se eliminan ramas ni se eluden protecciones. Consultar
 [Actions](https://github.com/javiercamarapp/bio-humanidad/actions/workflows/tests.yml).
 
 ## Privacidad y presupuesto
