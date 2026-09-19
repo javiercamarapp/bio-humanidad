@@ -1,4 +1,12 @@
-# 02 — Programa del bucle
+# 02 — Programa del bucle (diseño original)
+
+> **Estado operativo actualizado:** el ejecutor implementado se rige por
+> [`PROGRAMA.md`](PROGRAMA.md) y [`10-OPERACION-BUCLE.md`](10-OPERACION-BUCLE.md).
+> Este documento conserva el diseño inicial, no una descripción de capacidades ya
+> implementadas. Hoy se validan candidatos existentes: no se generan hipótesis,
+> no se hacen commits por vuelta y la métrica no demuestra verdad científica.
+> La revisión humana vive fuera de salidas; el bucle solo escribe en
+> `salidas/bucle/<id>/`. Sin dorado humano, se detiene antes de la primera vuelta.
 
 Aplica `bucle-trinquete`. Un bucle sin métrica, reversión barata y techo no itera:
 deambula.
@@ -27,7 +35,9 @@ aunque sean malas. **Los guardias existen por eso** y no son negociables.
 **Cobertura validada** = hipótesis que pasan las cinco comprobaciones / hipótesis propuestas.
 Dirección: **sube**.
 
-Comando: `python3 -m bio.validar salidas/hipotesis/ --rubrica`
+Comando de validación: `python3 -m bio.validador.validar salidas/hipotesis/ --rubrica`
+
+Comando del ejecutor construido: `python3 -m bio.bucle --max-vueltas 200 --max-segundos 900`
 
 Las cinco comprobaciones, cada una automática:
 
@@ -53,7 +63,7 @@ Cómo se lee: el script imprime `cobertura = N/M` y la línea `FALLA: <hipotesis
 2. Propone **UNA** hipótesis, motivada por una brecha detectada en la evidencia.
 3. La escribe en `salidas/hipotesis/YYYY-MM-DD-slug.md`.
 4. Commit del candidato.
-5. Corre `python3 -m bio.validar` con tope de **5 minutos**.
+5. Corre `python3 -m bio.validador.validar` con tope de **5 minutos** (diseño original; el ejecutor usa 30 segundos por defecto).
 6. Si la cobertura sube o la hipótesis pasa → conserva. Si no → `git revert` al mejor
    conocido. Si crashea → revierte, anota la excepción, sigue.
 7. Registra: hipótesis, veredicto, comprobación que falló, motivo.
