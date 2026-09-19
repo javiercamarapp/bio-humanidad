@@ -2,7 +2,7 @@
 
 ## Qué entrega el software
 
-Radar de **metadatos públicos HN/Algolia**, una sola fuente: recolector, normalización,
+Radar de **metadatos públicos HN/Algolia y feeds CDC/ECDC/OMS**: recolectores, normalización,
 procedencia, deduplicación, extractor por reglas con abstención, preparación offline,
 revisión/importación humana, evaluación por hashes y ejecución acotada.
 
@@ -18,6 +18,25 @@ Guías: [README](README.md), [bucle](10-OPERACION-BUCLE.md),
 [preparación](11-PREPARACION-OFFLINE.md), [revisión](12-REVISION-HUMANA.md),
 [vigilancia](13-VIGILANCIA-ACOTADA.md).
 
+## Ampliación multifuente
+
+`bio.recolector.multifuente` y `bio.historial` añaden snapshots RSS/Atom y unión offline
+con procedencia; `bio.vigilar --fuentes` los coordina sin reemplazar el modo HN. Guía:
+[14-OPERACION-MULTIFUENTE.md](14-OPERACION-MULTIFUENTE.md). El preflight real descartó
+endpoints antiguos; el feed OMS retenido expone su antigüedad, no oculta206 días sin
+publicación reciente. Descargas limitadas y sin hijos indefinidos tras morir el padre.
+
+Operación real:535 URLs RSS,0 errores. Con129 HN:664 URLs/4 fuentes/1 día observado;
+preparación no publicable,50 casos ciegos pendientes. Hashes comprobados y fuentes
+originales intactas. El vigilante real se detuvo en MAX_VUELTAS; esta corrida precedió
+al chequeo adicional de hash del snapshot, probado después con fixtures y hashes reales.
+
+Se añadieron20 pruebas sin alterar las183 anteriores. No existe todavía integración
+real con Ollama (no instalado/no disponible), ni clientes de analista/refutador. Esos
+componentes requieren definir/autorizarlos; tener prompts históricos no los completa.
+El detector actual no satisface automáticamente feeds semanales tras esperar90 días:
+hay una decisión de cobertura/calibración de dominio pendiente, no solo tiempo faltante.
+
 ## Verificación de punta a punta
 
 ```bash
@@ -26,7 +45,7 @@ python3.12 -m unittest discover -s tests -v
 python3 -m unittest discover -s tests -p test_flujo_completo.py -v
 ```
 
-Última verificación local: **183 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
+Última verificación local: **203 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
 saltó ninguna prueba anterior. El E2E usa comandos CLI reales en un temporal:
 
 1. Demo sintética sin red → preparación y hashes íntegros.

@@ -133,8 +133,13 @@ def subproceso(modulo, argumentos, timeout, detener):
 
 
 def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
-             intervalo_segundos=3600, max_segundos=86400):
+             intervalo_segundos=3600, max_segundos=86400, fuentes=None):
     limites(max_vueltas, intervalo_segundos, max_segundos, sin_red)
+    if fuentes is not None:
+        from bio.recolector.multifuente import FUENTES
+        if (sin_red or not fuentes or len(set(fuentes)) != len(fuentes)
+                or any(f not in FUENTES for f in fuentes)):
+            raise ValueError('fuentes RSS válidas sin duplicados; incompatibles con --sin-red')
     if sin_red and entrada is None:
         raise ValueError('--sin-red requiere --entrada')
     if not sin_red and entrada is not None:
@@ -156,7 +161,8 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
     state = dict(pid=os.getpid(), estado='EN_CURSO', motivo_final=None, vueltas=0,
                  informes=[], errores=0, errores_consecutivos=0,
                  red_habilitada=not sin_red, publicable=False, gasto_api_usd=0,
-                 reanudacion_soportada=False, proceso_activo=True)
+                 reanudacion_soportada=False, proceso_activo=True,
+                 fuentes=list(fuentes) if fuentes else (['offline'] if sin_red else ['hn']))
     motivo = 'ERROR'
     record = None
     entrega_pendiente = False
@@ -221,7 +227,8 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
         reason = detener() or result['interrupcion']
         if reason or result['codigo'] != 0:
             record['estado'] = reason or ('RECOLECCION_PARCIAL' if result['codigo'] == 2
-                                         and modulo.endswith('recolector') else 'ERROR_SUBPROCESO')
+                                         and modulo in {'bio.recolector.recolector',
+                                                        'bio.recolector.multifuente'} else 'ERROR_SUBPROCESO')
             record['error'] = reason not in {'STOP', 'SIGTERM', 'SIGINT', 'INTERRUPCION'}
             return False
         return True
@@ -248,8 +255,27 @@ def ejecutar(salida, *, entrada=None, sin_red=False, max_vueltas=24,
                           publicable=False, gasto_api_usd=0)
             try:
                 ruta_segura(datos)
-                recolectado = sin_red or lanzar('bio.recolector.recolector',
-                                                ['--salida', str(datos)], record)
+                if fuentes:
+                    from bio.recolector.recolector import guardar as agregar
+                    feed_dir = ciclo / 'recoleccion'
+                    recolectado = lanzar('bio.recolector.multifuente',
+                                         ['--salida', str(feed_dir), '--fuentes'] + list(fuentes), record)
+                    if recolectado:
+                        feed_raw = leer(feed_dir / 'senales.jsonl')
+                        feed_manifest = cargar(leer(feed_dir / 'manifest.json'))
+                        if (not isinstance(feed_manifest, dict)
+                                or feed_manifest.get('estado') != 'RECOLECCION_COMPLETA'
+                                or feed_manifest.get('publicable') is not False
+                                or feed_manifest.get('artefactos_sha256', {}).get('senales.jsonl')
+                                != hashlib.sha256(feed_raw).hexdigest()):
+                            raise ValueError('manifiesto de recolección inválido')
+                        nuevas = parsear_jsonl(feed_raw.decode('utf-8'))
+                        if datos.exists() and not leer(datos):
+                            raise ValueError('historial vacío: posible placeholder')
+                        agregar(datos, nuevas)
+                else:
+                    recolectado = sin_red or lanzar('bio.recolector.recolector',
+                                                    ['--salida', str(datos)], record)
                 if recolectado:
                     raw = leer(datos)
                     digest = hashlib.sha256(raw).hexdigest()
@@ -389,6 +415,9 @@ def main(argv=None):
     parser.add_argument('--salida', type=Path, required=True)
     parser.add_argument('--entrada', type=Path)
     parser.add_argument('--sin-red', action='store_true')
+    from bio.recolector.multifuente import FUENTES
+    parser.add_argument('--fuentes', nargs='+', choices=sorted(FUENTES),
+                        help='feeds RSS públicos; por defecto se usa HN')
     parser.add_argument('--max-vueltas', type=int, default=24)
     parser.add_argument('--intervalo-segundos', type=float, default=3600)
     parser.add_argument('--max-segundos', type=float, default=86400)

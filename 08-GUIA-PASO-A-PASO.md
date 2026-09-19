@@ -1,6 +1,9 @@
 # 08 — Guía paso a paso
 
-Qué hacer, en qué orden, desde hoy.
+Hoja de ruta histórica, no lista vigente de órdenes. Importes/plazos son propuestas,
+no presupuestos autorizados. Usar [guía14](14-OPERACION-MULTIFUENTE.md) para operar lo
+construido y distinguir decisiones humanas de trabajo pendiente. D1/D2 no pertenecen
+al producto abierto ni se activan automáticamente al completar otra fase.
 
 ---
 
@@ -75,7 +78,7 @@ Qué hacer, en qué orden, desde hoy.
 
 ## Reglas para no descarrilar
 
-1. **Una dirección a la vez.** El radar primero. No abras D1 hasta tener fase 0.
+1. **Una dirección a la vez.** Solo el radar de metadatos en este producto. D1/D2 quedan fuera.
 2. **Nada sin fuente.** Una cifra sin cita no entra.
 3. **Publica los fracasos.** Son el activo de credibilidad.
 4. **No prometas el descubrimiento.** Promete método y evidencia.
@@ -87,10 +90,13 @@ Qué hacer, en qué orden, desde hoy.
 
 ## Qué hacer mañana, exactamente
 
-Tres cosas, en este orden, y ninguna necesita permiso de nadie:
+1. Usar los recolectores construidos y la muestra ciega indicados en la guía14.
+2. Una persona revisa los casos; solo después comprobar e importar el CSV. **No crear
+   un dorado vacío ni inventar etiquetas para pasar controles.**
+3. Antes de instalar Ollama/descargar pesos, autorizar instalación y recursos. Definir
+   además proveedores distintos para analista/refutador y su presupuesto. Nada de eso
+   se deduce de esta hoja de ruta. No se comparten claves por chat.
 
-1. `ollama pull qwen2.5:14b` y verificar que responde sin conexión.
-2. Escribir el recolector de **una** fuente (ProMED o bioRxiv). Solo una.
-3. Crear el archivo vacío del conjunto dorado y etiquetar la primera señal a mano.
-
-Con eso ya empezó el programa. El resto es repetición y rigor.
+Los accesos restringidos y las condiciones de terceros deben resolverse antes de
+integrar nuevas fuentes. No se promete primer informe científico por haber ejecutado
+un recolector, ni se publican alertas sin revisión/autorización explícita.
