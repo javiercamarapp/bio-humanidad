@@ -106,7 +106,9 @@ Permanecen vacíos; también se conservan los campos de notas del radar.
 El CSV no es un dorado aprobado ni se carga directamente como JSONL. Sigue el esquema
 humano de `10-OPERACION-BUCLE.md`; los casos ambiguos requieren resolución humana o
 exclusión explícita, nunca una aprobación inventada. No hay importación automática
-que convierta estas sugerencias en etiquetas humanas.
+que convierta estas sugerencias en etiquetas humanas. Una revisión realmente completada
+puede comprobarse e importarse explícitamente con `bio.dorado`: consulta
+[`12-REVISION-HUMANA.md`](12-REVISION-HUMANA.md).
 
 ## Pruebas
 

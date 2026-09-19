@@ -22,12 +22,14 @@ Empieza por [`00-LEEME.md`](00-LEEME.md).
 | 09 | [Blueprint](09-BLUEPRINT.md) |
 | 10 | [Operar el bucle de validación](10-OPERACION-BUCLE.md) |
 | 11 | [Pipeline de preparación offline](11-PREPARACION-OFFLINE.md) |
+| 12 | [Comprobar e importar revisión humana](12-REVISION-HUMANA.md) |
 
 ## Código
 ```bash
 python3 -m bio.recolector.recolector --salida datos/senales/senales.jsonl
 python3 -m bio.validador.validar salidas/hipotesis/ --rubrica
 python3 -m bio.preparacion --salida salidas/preparacion/mi-corrida --corte 2026-09-20
+python3 -m bio.dorado comprobar salidas/preparacion/mi-corrida/revision
 python3 -m bio.bucle --max-vueltas 200 --max-segundos 900
 python3 -m unittest discover -s tests -v
 ```
@@ -37,6 +39,9 @@ Usa una carpeta nueva y el corte UTC apropiado para cada preparación.
 
 ## Estado
 Fase 0. Recolector de HN, radar léxico offline, extractor de referencia por reglas,
-evaluador de categorías y ejecutor acotado implementados. Sin modelos conectados,
+evaluador de categorías, importador explícito de revisión humana y ejecutor acotado implementados. Sin modelos conectados,
 sin banco húmedo ni contratos. La revisión humana y la historia multifuente siguen
 pendientes: no hay alertas científicamente validadas ni publicación automática.
+
+[Estado verificable y pendientes](ESTADO.md). GitHub Actions ejecuta la suite offline
+en cada push a `main` y pull request; no recibe datos reales ni credenciales de servicios.
