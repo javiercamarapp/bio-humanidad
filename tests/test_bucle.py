@@ -303,6 +303,94 @@ class BucleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'hash'):
                 bucle.evaluar_subproceso(path, self.root / 'datos/revisiones', [], True, 1)
 
+    def test_checkpoints_tardios_no_aceptan_tampoco_al_reanudar(self):
+        persistir = bucle.json_atomico
+        for stage in ('registro', 'en_curso', 'final'):
+            for salto in (60, -60):
+                with self.subTest(stage=stage, salto=salto), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp).resolve()
+                    dorado_sintetico(root)
+                    candidates = root / 'salidas/hipotesis'
+                    candidates.mkdir(parents=True)
+                    source = candidates / 'fixture.md'
+                    source.write_text(CANDIDATO)
+                    wall, fired = [1000.0], [False]
+                    def lento(path, data):
+                        persistir(path, data)
+                        target = ((stage == 'registro' and path.name == 'registro.json') or
+                                  (stage == 'en_curso' and data.get('motivo_parada') == 'EN_CURSO') or
+                                  (stage == 'final' and data.get('motivo_parada') == 'COLA_AGOTADA'))
+                        if target and not fired[0]:
+                            fired[0] = True
+                            wall[0] += salto
+                    with mock.patch.object(bucle.time, 'time', side_effect=lambda: wall[0]), \
+                            mock.patch.object(bucle, 'json_atomico', side_effect=lento), \
+                            mock.patch.object(bucle, 'evaluar_subproceso', return_value={
+                                'estado': 'ACEPTADA', 'motivos': ['FIXTURE SINTETICO, NO PERSONA REAL']}):
+                        result = bucle.ejecutar(root, sin_red=True, max_segundos=2)
+                        resumed = bucle.ejecutar(root, reanudar=Path(result['corrida']))
+                    self.assertTrue(fired[0])
+                    self.assertEqual(result['motivo_parada'], 'PRESUPUESTO' if salto > 0 else 'RELOJ_RETROCEDIO')
+                    self.assertEqual(result['aceptadas'], 0)
+                    self.assertEqual(resumed['aceptadas'], 0)
+                    self.assertEqual(source.read_text(), CANDIDATO)
+                    records = list(Path(result['corrida']).glob('intentos/*/registro.json'))
+                    self.assertEqual(len(records), 1)
+                    self.assertEqual(json.loads(records[0].read_text())['estado'], 'ERROR')
+
+    def test_checkpoint_final_tardio_conserva_intentos_previos(self):
+        dorado_sintetico(self.root)
+        self.candidate(1)
+        self.candidate(2)
+        persistir = bucle.json_atomico
+        wall, fired = [1000.0], [False]
+        def lento(path, data):
+            persistir(path, data)
+            if data.get('motivo_parada') == 'COLA_AGOTADA' and not fired[0]:
+                fired[0] = True
+                wall[0] += 60
+        with mock.patch.object(bucle.time, 'time', side_effect=lambda: wall[0]), \
+                mock.patch.object(bucle, 'json_atomico', side_effect=lento), \
+                mock.patch.object(bucle, 'evaluar_subproceso', side_effect=lambda *a: {
+                    'estado': 'ACEPTADA', 'motivos': ['FIXTURE SINTETICO, NO PERSONA REAL']}):
+            result = self.run_loop(max_segundos=2)
+            resumed = self.run_loop(reanudar=Path(result['corrida']))
+        self.assertEqual(result['motivo_parada'], 'PRESUPUESTO')
+        self.assertEqual(result['aceptadas'], 1)
+        self.assertEqual(resumed['aceptadas'], 1)
+        self.assertEqual([r['estado'] for r in bucle.cargar_intentos(Path(result['corrida']))],
+                         ['ACEPTADA', 'ERROR'])
+
+    def test_fallo_checkpoint_bloquea_recuperacion_de_aceptacion_provisional(self):
+        persistir = bucle.json_atomico
+        for fase in ('EN_CURSO', 'COLA_AGOTADA'):
+            for salto in (60, -60, 0):
+                with self.subTest(fase=fase, salto=salto), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp).resolve()
+                    dorado_sintetico(root)
+                    candidates = root / 'salidas/hipotesis'
+                    candidates.mkdir(parents=True)
+                    (candidates / 'fixture.md').write_text(CANDIDATO)
+                    wall, fired = [1000.0], [False]
+                    def fallar(path, data):
+                        if (path.name == 'estado.json' and data.get('aceptadas') and
+                                data.get('motivo_parada') == fase and not fired[0]):
+                            fired[0] = True
+                            wall[0] += salto
+                            raise OSError('FIXTURE fallo recuperable de persistencia')
+                        persistir(path, data)
+                    with mock.patch.object(bucle.time, 'time', side_effect=lambda: wall[0]), \
+                            mock.patch.object(bucle, 'json_atomico', side_effect=fallar), \
+                            mock.patch.object(bucle, 'evaluar_subproceso', return_value={
+                                'estado': 'ACEPTADA', 'motivos': ['FIXTURE SINTETICO, NO PERSONA REAL']}):
+                        with self.assertRaises(OSError):
+                            bucle.ejecutar(root, max_segundos=2)
+                        run = next((root / 'salidas/bucle').iterdir())
+                        with self.assertRaisesRegex(ValueError, 'confirmación pendiente'):
+                            bucle.ejecutar(root, reanudar=run)
+                    self.assertTrue(fired[0])
+                    self.assertEqual(len(list(run.glob('intentos/*/candidato.md'))), 1)
+
     def test_placeholder_estado_no_se_sobrescribe(self):
         first = self.run_loop()
         run = Path(first['corrida'])

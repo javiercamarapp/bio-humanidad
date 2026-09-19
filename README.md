@@ -41,6 +41,7 @@ no sobrescribe resultados anteriores.
 | `bio.validador.validar` | Controles técnicos, revisión humana por hash y citas; no prueba verdad científica |
 | `bio.bucle` | Consume candidatos existentes con límites, historial y guardias; no genera hipótesis |
 | `bio.demo` | Demostración reproducible con datos sintéticos, sin coste API |
+| `bio.vigilar` | Ingesta/preparación acotadas, STOP y presupuesto; no investigación autónoma |
 
 ## Procesar datos reales
 
@@ -62,6 +63,21 @@ La salida contiene `informe.md`, `manifest.json`, snapshots, predicciones,
 `deteccion.json`, `metricas.json` y `revision/revision.csv`.
 `PREPARACION_COMPLETA` significa archivos producidos, **no** investigación validada.
 Sin etiquetas humanas, la calidad queda sin medir; sin historia, el detector se abstiene.
+
+## Vigilancia pública finita
+
+Para coordinar ingesta y preparación en una carpeta nueva:
+
+```bash
+python3 -m bio.vigilar --salida salidas/vigilancia/primera \
+  --max-vueltas 1 --max-segundos 90
+```
+
+Consulta HN/Algolia, no ejecuta modelos y mantiene `publicable:false`. Ofrece
+`--sin-red --entrada ARCHIVO`, deduplicación por corrida, parada con archivo `STOP`
+y límites que incluyen suspensión simulada. No es un daemon ni soporta reanudación;
+una corrida interrumpida se conserva, nunca se sobrescribe. Guía y límites:
+[13-VIGILANCIA-ACOTADA.md](13-VIGILANCIA-ACOTADA.md).
 
 ## Revisión humana — no se salta
 
@@ -117,8 +133,20 @@ primarias o estructura predicha con funcionalidad demostrada. Véase
 python3 -m unittest discover -s tests -v
 ```
 
-La suite usa fixtures temporales, sin red ni datos reales. CI está configurado para
-Python 3.12 en GitHub Actions, con permisos de lectura y acciones fijadas por SHA.
+La suite usa fixtures temporales, sin red ni datos reales. Para comprobar el flujo
+completo por CLI (demo → revisión → importación simulada → evaluación → gates):
+
+```bash
+python3 -m unittest discover -s tests -p test_flujo_completo.py -v
+```
+
+Las etiquetas de esa prueba están rotuladas como **fixtures sintéticos** y solo
+existen en su temporal. No completan el dorado humano del proyecto ni miden calidad
+científica. La prueba comprueba también que una revisión incompleta no se importa,
+que no se sobrescribe un dorado existente y que importar no aprueba candidatos.
+
+CI está configurado para
+Python 3.9 y 3.12 en GitHub Actions, con permisos de lectura y acciones fijadas por SHA.
 Consulta el badge y [ESTADO.md](ESTADO.md): las pruebas locales no sustituyen a un
 job remoto que no llegó a ejecutarse. Los runners estándar de repos públicos suelen
 ser gratuitos; restricciones de cuenta pueden impedir ejecutarlos igualmente.
@@ -135,6 +163,7 @@ convierte contenido externo en MIT. El historial de Git incluye nombre y correo 
 - [Operación del bucle](10-OPERACION-BUCLE.md)
 - [Preparación offline](11-PREPARACION-OFFLINE.md)
 - [Revisión humana](12-REVISION-HUMANA.md)
+- [Vigilancia pública acotada](13-VIGILANCIA-ACOTADA.md)
 - [Contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) · [Licencia](LICENSE)
 
 Autor: Javier Cámara Portepetit · [GitHub](https://github.com/javiercamarapp)
