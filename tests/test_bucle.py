@@ -53,6 +53,13 @@ class BucleTests(unittest.TestCase):
         path.write_text(path.read_text().replace('"humano"', '"modelo"'))
         self.assertTrue(bucle.validar_dorado(self.root))
 
+    def test_dorado_con_claves_duplicadas_se_bloquea(self):
+        path = dorado_sintetico(self.root)
+        lines = path.read_text().splitlines()
+        lines[0] = lines[0][:-1] + ', "categoria_humana": "brote"}'
+        path.write_text('\n'.join(lines) + '\n')
+        self.assertTrue(bucle.validar_dorado(self.root))
+
     def test_dorado_50_ids_duplicados_no_cuenta(self):
         path = dorado_sintetico(self.root)
         path.write_text(path.read_text().splitlines()[0] + '\n')
@@ -98,6 +105,7 @@ class BucleTests(unittest.TestCase):
         self.assertEqual(result['vueltas'], 2)
         self.assertEqual(result['estados']['ERROR'], 1)
         self.assertEqual(result['estados']['RECHAZADA'], 1)
+        self.assertEqual(result['motivo_parada'], 'COLA_AGOTADA_CON_ERRORES')
 
     def test_agotamiento(self):
         dorado_sintetico(self.root)

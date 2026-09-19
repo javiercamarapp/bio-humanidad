@@ -17,6 +17,8 @@ import re
 import sys
 from urllib.parse import urlsplit, urlunsplit
 
+from bio.json_estricto import cargar
+
 DIAS_BASE = 90
 DIAS_ACTUALES = 7
 CATEGORIAS = ("brote", "vigilancia", "sintesis", "dual-use", "politica", "capacidad", "otro",
@@ -54,7 +56,7 @@ def normalizar(registros: list[dict]) -> list[dict]:
     Un id que identifica URLs diferentes es corrupción, no una nueva señal.
     No se infiere independencia entre fuentes que repiten la misma URL.
     """
-    ids, unicas = {}, {}
+    ids, unicas, observaciones = {}, {}, {}
     for numero, s in enumerate(registros, 1):
         try:
             if not isinstance(s, dict):
@@ -72,6 +74,11 @@ def normalizar(registros: list[dict]) -> list[dict]:
             if s["id"] in ids and ids[s["id"]] != url:
                 raise ValueError(f"id {s['id']} conflictivo")
             ids[s["id"]] = url
+            observacion = (s["fuente"], url, observada)
+            contenido = (s["fecha"], s["claim_literal"])
+            if observacion in observaciones and observaciones[observacion] != contenido:
+                raise ValueError('contenidos contradictorios para la misma observación')
+            observaciones[observacion] = contenido
             copia = {**s, "url": url, "recolectado_en": observada.isoformat().replace("+00:00", "Z")}
             previo = unicas.get(url)
             clave = (observada, json.dumps(copia, sort_keys=True, ensure_ascii=False))
@@ -88,7 +95,7 @@ def parsear_jsonl(texto: str) -> list[dict]:
         if not linea.strip():
             continue
         try:
-            s = json.loads(linea)
+            s = cargar(linea)
             normalizar([s])
         except (ValueError, TypeError) as e:
             raise ValueError(f"línea {numero}: {e}") from e

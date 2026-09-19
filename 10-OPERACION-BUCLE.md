@@ -118,6 +118,10 @@ presupuesto global: para una corrida operativa usa siempre `bio.bucle`.
   de vida; consulta el proceso para conocer su estado durante una ejecución.
 
 Los intentos no se borran. Un historial inconsistente se detiene para revisión manual.
+Si terminó la cola pero hubo errores de ejecución, el estado es
+`COLA_AGOTADA_CON_ERRORES` y el código de salida es 2, no éxito silencioso.
+El dorado, revisiones y estado rechazan claves JSON repetidas y números no finitos:
+una segunda clave `decision` no puede sobrescribir una decisión anterior.
 Los directorios generados siguen ignorados por Git; no se publican datos ni revisiones
 al hacer commit de código. No ejecutar simultáneamente construcción y bucle operativo:
 los cambios de código son, deliberadamente, una causa de parada.

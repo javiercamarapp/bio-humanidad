@@ -106,6 +106,16 @@ class PreparacionTests(unittest.TestCase):
             self.run_pipeline(dorado=gold)
         self.assertFalse(self.output.exists())
 
+    def test_dorado_con_categoria_duplicada_no_se_evaluara(self):
+        gold = self.root / 'gold.jsonl'
+        rows = [{**s, 'categoria_humana': 'brote', 'severidad_humana': 'no_aplica',
+                 'revisor': 'FIXTURE', 'fecha_revision': '2026-09-19', 'origen_etiqueta': 'humano'}
+                for s in self.data]
+        gold.write_text(''.join(json.dumps(r)[:-1] + ', "categoria_humana": "vigilancia"}\n' for r in rows))
+        with self.assertRaisesRegex(ValueError, 'duplicada'):
+            self.run_pipeline(dorado=gold)
+        self.assertFalse(self.output.exists())
+
     def test_dorado_ausente_explicito_es_pendiente(self):
         result = self.run_pipeline(dorado=self.root / 'ausente.jsonl')
         self.assertEqual(result['estado_validacion'], 'PENDIENTE_DORADO')

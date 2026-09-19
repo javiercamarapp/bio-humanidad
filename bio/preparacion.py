@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 import time
 
-from bio import evaluacion, extractor, radar
+from bio import evaluacion, extractor, json_estricto, radar
 
 MAX_BYTES = 10_000_000
 MAX_REGISTROS = 5000
@@ -37,7 +37,8 @@ def jsonl(data: list[dict]) -> str:
 
 
 def huellas_codigo() -> dict:
-    paths = [Path(__file__), Path(radar.__file__), Path(extractor.__file__), Path(evaluacion.__file__)]
+    paths = [Path(__file__), Path(radar.__file__), Path(extractor.__file__),
+             Path(evaluacion.__file__), Path(json_estricto.__file__)]
     return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
@@ -61,7 +62,7 @@ def ejecutar(entrada: Path, salida: Path, corte: date, *, dorado: Path | None = 
     gold_hash = None
     if dorado is not None and (dorado.exists() or dorado.is_symlink()):
         gold_raw = leer_acotado(dorado)
-        reference = [json.loads(line) for line in gold_raw.decode('utf-8').splitlines() if line.strip()]
+        reference = [json_estricto.cargar(line) for line in gold_raw.decode('utf-8').splitlines() if line.strip()]
         metrics = evaluacion.evaluar(reference, predictions)
         gold_hash = hashlib.sha256(gold_raw).hexdigest()
     else:

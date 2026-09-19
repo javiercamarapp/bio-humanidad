@@ -103,6 +103,13 @@ class EvidenciaTests(RegresionesOriginales):
         with mock.patch.object(validar, 'texto_fuente', return_value='Una página distinta'):
             self.assertEqual(self.evaluate()['estado'], 'FUENTE_NO_VERIFICABLE')
 
+    def test_revision_con_decisiones_duplicadas_no_autoriza(self):
+        self.save_review()
+        path = next(self.reviews.glob('*.json'))
+        path.write_text('{"decision":"rechazar",' + path.read_text()[1:])
+        with mock.patch.object(validar, 'texto_fuente', return_value=self.record['citas'][0]['texto']):
+            self.assertEqual(self.evaluate()['estado'], 'RECHAZADA')
+
     def test_revision_obsoleta_no_se_usa(self):
         self.save_review()
         self.path.write_text(CANDIDATO + '\nCambio posterior a la revisión.')

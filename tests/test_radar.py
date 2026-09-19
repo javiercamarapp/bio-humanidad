@@ -92,6 +92,23 @@ class RadarTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "id.*conflictivo"):
             normalizar([senal(1), {**senal(2), "id": "1"}])
 
+    def test_misma_observacion_con_titulares_contradictorios_se_rechaza(self):
+        from bio.radar import normalizar
+        first = senal(1, titulo='Outbreak bulletin')
+        second = {**first, 'claim_literal': 'Surveillance bulletin'}
+        for rows in ([first, second], [second, first]):
+            with self.assertRaisesRegex(ValueError, 'contradictori'):
+                normalizar(rows)
+
+    def test_json_claves_repetidas_y_numeros_no_finitos_se_rechaza(self):
+        from bio.radar import parsear_jsonl
+        raw = json.dumps(senal(1))
+        invalid = [raw[:-1] + ', "claim_literal": "otro titular"}',
+                   raw[:-1] + ', "extra": NaN}', raw[:-1] + ', "extra": 1e999}']
+        for text in invalid:
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                parsear_jsonl(text)
+
     def test_muestra_reproducible_no_etiquetada_y_no_sobrescribe(self):
         from bio.radar import preparar
         datos = [senal(i) for i in range(60)]

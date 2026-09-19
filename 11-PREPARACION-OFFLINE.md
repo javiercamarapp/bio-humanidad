@@ -23,7 +23,10 @@ de historia recolectada.
 La salida debe ser una carpeta nueva: no se sobrescribe una corrida anterior.
 Se requieren al menos 50 señales para la muestra predeterminada; `--cantidad N`
 permite una muestra menor para pruebas, **sin reducir el mínimo de 50 del dorado**.
-Límites de entrada: 10 MB y 5000 señales únicas.
+Límites de entrada: 10 MB y 5000 señales únicas. Se rechazan claves JSON repetidas,
+números no finitos, profundidad excesiva y enteros de más de 1000 caracteres.
+Dos contenidos diferentes para la misma fuente, URL e instante de observación son
+un conflicto: se rechazan antes de deduplicar, no se escoge el favorable.
 
 ## Qué produce
 

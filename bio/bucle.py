@@ -17,6 +17,7 @@ import sys
 import time
 import uuid
 
+from bio.json_estricto import cargar
 from bio.validador.validar import leer_texto
 
 CATEGORIAS = {'brote', 'vigilancia', 'sintesis', 'dual-use', 'politica', 'capacidad', 'otro'}
@@ -63,7 +64,7 @@ def huellas_protegidas(root: Path) -> dict:
         if path.exists():
             paths.add(path)
     # Incluye el código efectivamente ejecutado también en pruebas con un root temporal.
-    for path in (CODIGO / 'bucle.py', CODIGO / 'validador/validar.py'):
+    for path in (CODIGO / 'bucle.py', CODIGO / 'validador/validar.py', CODIGO / 'json_estricto.py'):
         paths.add(path)
     return {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 
@@ -76,7 +77,7 @@ def validar_dorado(root: Path) -> list[str]:
             return ['falta datos/dorado/senales.jsonl con al menos 50 etiquetas humanas']
         if not 0 < path.stat().st_size <= 10_000_000:
             return ['conjunto dorado vacío o demasiado grande']
-        rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
+        rows = [cargar(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
         ids = set()
         for row in rows:
             if not isinstance(row, dict):
@@ -99,16 +100,17 @@ def validar_dorado(root: Path) -> list[str]:
 
 def evaluar_subproceso(path: Path, revisiones: Path, accepted: list[Path],
                        sin_red: bool, timeout: float) -> dict:
-    command = [sys.executable, str(CODIGO / 'validador/validar.py'), str(path),
+    command = [sys.executable, '-m', 'bio.validador.validar', str(path),
                '--json', '--revisiones', str(revisiones)]
     if sin_red:
         command.append('--sin-red')
     for previous in accepted:
         command.extend(['--comparar', str(previous)])
-    result = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
+    result = subprocess.run(command, capture_output=True, text=True, timeout=timeout,
+                            cwd=CODIGO.parent)
     if result.returncode not in (0, 2):
         raise ValueError('validador terminó con código ' + str(result.returncode))
-    output = json.loads(result.stdout)
+    output = cargar(result.stdout)
     records = output['resultados']
     if len(records) != 1 or records[0]['estado'] not in ESTADOS:
         raise ValueError('respuesta inválida del validador')
@@ -127,7 +129,7 @@ def cargar_intentos(run: Path) -> list[dict]:
         sin_enlaces(path / 'candidato.md', run)
         if not re.fullmatch(r'\d{6}-[a-f0-9]{64}', path.name):
             raise ValueError('intento con nombre inválido')
-        record = json.loads((path / 'registro.json').read_text())
+        record = cargar((path / 'registro.json').read_text())
         if (record['numero'] != len(attempts) + 1 or record['estado'] not in ESTADOS
                 or record['sha256'] != hashlib.sha256((path / 'candidato.md').read_bytes()).hexdigest()
                 or path.name != f"{record['numero']:06d}-{record['sha256']}"):
@@ -175,7 +177,7 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
         else:
             for name in ('config.json', 'intentos'):
                 sin_enlaces(run / name, root)
-            config = json.loads((run / 'config.json').read_text())
+            config = cargar((run / 'config.json').read_text())
             limites_validos(config)
             if config['root'] != str(root):
                 raise ValueError('la corrida pertenece a otro proyecto')
@@ -187,7 +189,7 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             sin_enlaces(run / 'estado.json', root)
             if (run / 'estado.json').stat().st_size == 0:
                 raise ValueError('estado vacío: posible placeholder')
-            previous = json.loads((run / 'estado.json').read_text())
+            previous = cargar((run / 'estado.json').read_text())
         elapsed_anchor = max(0, wall_anchor - config['inicio'], previous.get('tiempo_consumido', 0))
         last_wall = max(config['inicio'], previous.get('ultima_observacion_reloj', config['inicio']))
         rollback = wall_anchor < last_wall
@@ -296,7 +298,8 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             return finish('PRESUPUESTO')
         if no_improvement >= config['sin_mejora']:
             return finish('AGOTAMIENTO')
-        return finish('COLA_AGOTADA')
+        return finish('COLA_AGOTADA_CON_ERRORES' if any(a['estado'] == 'ERROR' for a in attempts)
+                      else 'COLA_AGOTADA')
 
 
 def main() -> int:

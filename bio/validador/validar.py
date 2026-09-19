@@ -14,6 +14,8 @@ import sys
 import urllib.parse
 import urllib.request
 
+from bio.json_estricto import cargar
+
 CAMPOS = ('id', 'falsable', 'prueba', 'costo', 'alcance', 'fuentes', 'estado')
 ALCANCE_OK = {'defensa', 'preparacion', 'vigilancia', 'evals'}
 MAX_DOCUMENTO = 256_000
@@ -60,7 +62,7 @@ def frontmatter(texto: str) -> dict:
 
 def parse_fuentes(value: str) -> list[str]:
     try:
-        urls = json.loads(value)
+        urls = cargar(value)
     except (ValueError, TypeError):
         return []
     if (not isinstance(urls, list) or not 1 <= len(urls) <= 10
@@ -177,7 +179,7 @@ def evaluar(path: pathlib.Path, verificar_red: bool = True,
         review_path = (revisiones / (digest + '.json')) if revisiones else None
         if review_path is None or not review_path.exists():
             return salida('PENDIENTE_HUMANO', 'falta revisión humana ligada al hash del candidato')
-        review = json.loads(leer_texto(review_path))
+        review = cargar(leer_texto(review_path))
         if not isinstance(review, dict):
             return salida('PENDIENTE_HUMANO', 'revisión inválida')
         if (review.get('sha256') != digest or review.get('origen') != 'humano'
