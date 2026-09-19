@@ -43,5 +43,7 @@ evaluador de categorías, importador explícito de revisión humana y ejecutor a
 sin banco húmedo ni contratos. La revisión humana y la historia multifuente siguen
 pendientes: no hay alertas científicamente validadas ni publicación automática.
 
-[Estado verificable y pendientes](ESTADO.md). GitHub Actions ejecuta la suite offline
-en cada push a `main` y pull request; no recibe datos reales ni credenciales de servicios.
+[Estado verificable y pendientes](ESTADO.md). GitHub Actions está configurado para la
+suite offline en pushes a `main` y pull requests, sin datos reales ni credenciales de
+servicios. **La primera ejecución remota fue bloqueada por facturación/límite de gasto
+de GitHub; no está verificada en CI.** Las pruebas locales sí pasan.

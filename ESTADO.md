@@ -17,9 +17,17 @@
 python3 -m unittest discover -s tests -v
 ```
 
-Última ejecución local: **137 pruebas, OK**. Se usan fixtures sintéticos y temporales,
-no un conjunto dorado inventado dentro del proyecto. El estado actual del CI remoto
-se consulta en la pestaña Actions; esta nota no sustituye al resultado de cada corrida.
+Última ejecución local: **137 pruebas, OK**, también en una exportación limpia de
+`84155d3`. Se usan fixtures sintéticos y temporales, no un conjunto dorado inventado.
+Una revisión independiente repitió la suite y no encontró defectos altos/medios en
+el importador. Se comprobó también una carrera real de ocho procesos: un único
+importador publicó el archivo completo sin alterar las entradas.
+
+**CI remoto bloqueado, no verde.** En la [corrida 35458465535](https://github.com/javiercamarapp/bio-humanidad/actions/runs/35458465535),
+GitHub no inició ningún paso y notificó un bloqueo de facturación o límite de gasto
+de la cuenta. No se observaron pruebas ejecutadas en GitHub. No se modificaron pagos
+ni límites para sortearlo. El titular de la cuenta debe resolver ese bloqueo y
+reintentar; esta nota no sustituye al estado actual de la pestaña Actions.
 
 Preparación real verificada: **129 señales de HN**, 52 sugerencias temáticas, 77
 abstenciones y 50 casos sin etiquetar para revisión. Se verificaron hashes de artefactos,
