@@ -60,11 +60,26 @@ antes de comprometer el registro y bloquea reanudación si la confirmación no t
 La evidencia no se borra. Dos regresiones nuevas cubren checkpoint intermedio/final,
 salto civil hacia adelante/atrás y fallo sin salto: la suite final da **171 OK** por versión.
 
-**Esta última corrección aún no tiene dictamen independiente favorable.** Se agotaron
-las 2 revisiones previstas: no se interpreta el verde local como aprobación del revisor
-ni se integra la PR por inferencia. Ambas revisiones usaron copias aisladas de fuentes
-públicas con temporales escribibles; se cotejaron hashes, sin acceso a datos reales.
+La tanda de correcciones terminó sin dictamen favorable, al agotar sus 2 revisiones.
 Evidencia local: `salidas/verificacion/cierre-20260919/`.
+
+### Confirmación posterior del diseño congelado
+
+Ante una nueva solicitud de continuación se verificó `ccc9db0`, sin permitir más
+parches ni repetir revisores hasta obtener aprobación. **Dictamen: NO INTEGRAR**.
+Se reprodujo un bloqueante adicional: eliminar `.confirmacion-pendiente` consume tiempo
+después de la última guardia. Con presupuesto de 2 s y avance civil simulado de 60 s
+antes de `unlink`, devuelve `COLA_AGOTADA`, 1 aceptación sintética y cero marcadores;
+al reanudar mantiene esa aceptación. No hubo red ni revisión humana real en la prueba.
+
+[Issue #2: confirmación fuera de presupuesto](https://github.com/javiercamarapp/bio-humanidad/issues/2)
+contiene reproducción mínima y comportamiento esperado. Las 171 pruebas existentes
+pasan en ambos Python, pero **no cubren ese intercalado**. Es un fallo abierto, no solo
+una revisión pendiente. Se detuvo para revisar el protocolo de confirmación completo.
+
+Se verificó por SHA-256 que los 54 archivos de la copia del revisor coincidían con el
+árbol original congelado; no hubo mutaciones de código/tests. Evidencia local:
+`salidas/verificacion/confirmacion-final-20260919-2039/`.
 
 ## Operación real y entrega humana
 
@@ -118,15 +133,15 @@ CI histórico de `5b67f62`: [35464112714](https://github.com/javiercamarapp/bio-
 (3.9: 11.977 s; 3.12: 12.129 s). No es una inferencia del verde local.
 
 La PR sigue **OPEN / draft**: no hubo integración; `main` permanece en `18b7088`.
-El último control de persistencia requiere revisión independiente antes de integrar.
-Si se autoriza y supera ese paso, comprobar también el workflow de `main` en
+Antes de integrar hay que resolver el bloqueante del issue #2 y revisar el diseño;
+el CI verde actual no habilita esa integración. Después, comprobar el workflow de `main` en
 [Actions](https://github.com/javiercamarapp/bio-humanidad/actions/workflows/tests.yml).
 
 ## Privacidad y presupuesto
 
 Solo código, pruebas y documentación propia se versionan. `git ls-files datos salidas`
 incluye únicamente `.gitkeep` y `datos/ESQUEMA.md`. Crudos, CSV humanos, logs, salidas,
-revisiones y credenciales permanecen locales/ignorados. Gitleaks: **20 commits previos
+revisiones y credenciales permanecen locales/ignorados. Gitleaks: **22 commits previos
 sin hallazgos**; diff de los parches de cierre también sin hallazgos. Eso reduce riesgo,
 no demuestra ausencia absoluta de secretos. La identidad Git existente no se cambió.
 
