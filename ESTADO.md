@@ -78,7 +78,12 @@ Se revalidó la [corrida 35460152595](https://github.com/javiercamarapp/bio-huma
 de `18b7088`: **success**, con pasos de suite realmente ejecutados en Python 3.9 y 3.12.
 La nota antigua de CI bloqueado corresponde a la corrida histórica `35458465535`,
 no al estado actual. No se cambiaron pagos ni límites de cuenta en esta continuación.
-CI de esta nueva entrega: pendiente de push/PR y comprobación remota; no inferirlo del verde local.
+CI del código de esta entrega (`102b163`): **success** en la
+[corrida 35464034051](https://github.com/javiercamarapp/bio-humanidad/actions/runs/35464034051).
+Los logs remotos muestran `Ran 164 tests` y `OK` en ambos jobs (3.9: 11.379 s;
+3.12: 8.955 s). Verificado con `gh run view 35464034051 --log`, no inferido del verde local.
+La [PR #1](https://github.com/javiercamarapp/bio-humanidad/pull/1) está abierta **en borrador**;
+no se fusionó ni se alteró `main`. Consultar sus checks para cambios documentales posteriores.
 
 ## Publicación y privacidad
 
@@ -89,7 +94,8 @@ Código/documentación propia bajo MIT; contenido de terceros no se relicencia.
 `git ls-files datos salidas` contiene únicamente `.gitkeep` y `datos/ESQUEMA.md`.
 Datos crudos, revisiones, salidas y credenciales permanecen ignorados. Gitleaks sobre
 el historial previo: **18 commits, no leaks found**. El escaneo no garantiza ausencia
-de secretos; se revisa también el conjunto exacto de archivos que se publica. El nombre
+de secretos; el diff candidato de seis archivos también dio **no leaks found** usando
+`git diff --cached --binary | gitleaks stdin --redact`. El nombre
 y correo del autor existente forman parte del historial público.
 
 ## Resultado del presupuesto y límites
