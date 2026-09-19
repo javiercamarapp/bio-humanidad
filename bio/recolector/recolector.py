@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recolector de señales — cinco fuentes públicas, sin llaves.
+"""Recolector de titulares de HN/Algolia — una fuente, sin llaves.
 
 Uso:
     python3 -m bio.recolector.recolector --salida datos/senales/senales.jsonl
@@ -8,6 +8,10 @@ No usa IA. Solo recoge, normaliza y guarda. Si esto es frágil, nada más import
 """
 from __future__ import annotations
 import sys, json, time, hashlib, pathlib, argparse, urllib.parse, urllib.request
+import fcntl
+import os
+
+from bio.radar import normalizar, parsear_jsonl, url_canonica
 
 UA = {"User-Agent": "bio-humanidad/0.1 (+research)"}
 TERMINOS = [
@@ -44,8 +48,8 @@ def hn(termino: str, desde: int = 1700000000) -> list[dict]:
     return out
 
 
-def recolecta() -> list[dict]:
-    señales, vistas = [], set()
+def recolecta() -> tuple[list[dict], list[str]]:
+    señales, vistas, errores = [], set(), []
     for t in TERMINOS:
         try:
             for s in hn(t):
@@ -53,8 +57,35 @@ def recolecta() -> list[dict]:
                     vistas.add(s["id"])
                     señales.append(s)
         except Exception as e:
-            print(f"aviso: fallo en '{t}': {e}", file=sys.stderr)
-    return señales
+            mensaje = f"fallo en '{t}': {e}"
+            errores.append(mensaje)
+            print(f"aviso: {mensaje}", file=sys.stderr)
+    return señales, errores
+
+
+def guardar(path: pathlib.Path, nuevas: list[dict]) -> int:
+    """Añade URLs nuevas bajo bloqueo local; no reescribe el historial.
+
+    No basta con deduplicar dentro de una consulta: una ejecución posterior no
+    debe convertir el mismo titular en una observación histórica independiente.
+    """
+    nuevas = normalizar(nuevas)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+", encoding="utf-8") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        f.seek(0)
+        texto = f.read()
+        previas = parsear_jsonl(texto)
+        normalizar(previas + nuevas)  # Rechaza ids conflictivos antes de escribir.
+        conocidas = {url_canonica(s["url"]) for s in previas}
+        pendientes = [s for s in nuevas if s["url"] not in conocidas]
+        if pendientes:
+            f.seek(0, os.SEEK_END)
+            prefijo = "\n" if texto and not texto.endswith("\n") else ""
+            f.write(prefijo + "".join(json.dumps(s, ensure_ascii=False) + "\n" for s in pendientes))
+            f.flush()
+            os.fsync(f.fileno())
+        return len(pendientes)
 
 
 def main() -> int:
@@ -64,12 +95,16 @@ def main() -> int:
     p = pathlib.Path(a.salida)
     p.parent.mkdir(parents=True, exist_ok=True)
 
-    nuevas = recolecta()
-    with p.open("a", encoding="utf-8") as f:
-        for s in nuevas:
-            f.write(json.dumps(s, ensure_ascii=False) + "\n")
-    print(f"{len(nuevas)} señales -> {p}")
-    return 0
+    nuevas, errores = recolecta()
+    try:
+        agregadas = guardar(p, nuevas)
+    except (OSError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(f"{agregadas} señales nuevas de HN -> {p}; consultas fallidas: {len(errores)}")
+    if not nuevas and not errores:
+        print("aviso: las consultas no devolvieron señales; no demuestra ausencia de incidentes", file=sys.stderr)
+    return 2 if errores else 0
 
 
 if __name__ == "__main__":
