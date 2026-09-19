@@ -32,7 +32,9 @@ no sobrescribe resultados anteriores.
 
 | Componente | Comportamiento real |
 |---|---|
-| `bio.recolector.recolector` | Titulares de HN/Algolia, una fuente; deduplicación y fallos visibles |
+| `bio.recolector.recolector` | Titulares de HN/Algolia; deduplicación y fallos visibles |
+| `bio.recolector.multifuente` | RSS/Atom públicos CDC/ECDC/OMS; snapshots, límites y antigüedad visible |
+| `bio.historial` | Unión offline con procedencia; no fabrica días ni etiquetas |
 | `bio.radar` | Normalización, muestra ciega y comparación léxica; se abstiene sin historia suficiente |
 | `bio.extractor` | Reglas versionadas; evidencia literal y abstención, no un LLM |
 | `bio.evaluacion` | Cobertura, exactitud global/selectiva, errores de esquema y hashes incompatibles |
@@ -79,6 +81,19 @@ y límites que incluyen suspensión simulada. No es un daemon ni soporta reanuda
 una corrida interrumpida se conserva, nunca se sobrescribe. Guía y límites:
 [13-VIGILANCIA-ACOTADA.md](13-VIGILANCIA-ACOTADA.md).
 
+## Fuentes adicionales e historial
+
+```bash
+python3 -m bio.vigilar --fuentes cdc ecdc \
+  --salida salidas/vigilancia/rss-primera --max-vueltas 1 --max-segundos 90
+```
+
+Los feeds son metadatos parciales, no vigilancia clínica exhaustiva. Se conservan XML,
+hashes, fechas de observación, errores y advertencias por antigüedad. `bio.historial`
+permite unir corridas sin sustituir observación por publicación. Instrucciones y
+pendientes humanos: [14-OPERACION-MULTIFUENTE.md](14-OPERACION-MULTIFUENTE.md).
+No hay cron instalado ni proceso indefinido. HN continúa como opción predeterminada.
+
 ## Revisión humana — no se salta
 
 ```bash
@@ -113,8 +128,10 @@ checkpoints y paradas: [10-OPERACION-BUCLE.md](10-OPERACION-BUCLE.md).
 
 ## Lo que falta y lo que está fuera de alcance
 
-**Pendiente:** datos humanos reales, ingesta multifuente con historia, calibración
-retrospectiva, extractor por modelo local, analista y refutador. No se presentan
+**Pendiente:** datos humanos reales, historia suficiente y política de cobertura por
+frecuencia de fuente, calibración retrospectiva, extractor por modelo local, analista
+y refutador. Los clientes de modelos y su verificación dependen aún de autorizar
+instalación/proveedores/presupuesto; no están implementados por tener prompts escritos. No se presentan
 componentes pendientes como si ya corrieran.
 
 **Fuera de alcance:** mejora de patógenos, síntesis, secuencias, predicción de
@@ -164,6 +181,7 @@ convierte contenido externo en MIT. El historial de Git incluye nombre y correo 
 - [Preparación offline](11-PREPARACION-OFFLINE.md)
 - [Revisión humana](12-REVISION-HUMANA.md)
 - [Vigilancia pública acotada](13-VIGILANCIA-ACOTADA.md)
+- [Fuentes, historial y pendientes humanos](14-OPERACION-MULTIFUENTE.md)
 - [Contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) · [Licencia](LICENSE)
 
 Autor: Javier Cámara Portepetit · [GitHub](https://github.com/javiercamarapp)

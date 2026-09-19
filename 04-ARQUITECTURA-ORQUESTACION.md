@@ -1,5 +1,10 @@
 # 04 — Arquitectura y orquestación
 
+> Diseño histórico, no despliegue actual. Los modelos y clientes descritos aquí no
+> están instalados/implementados; los importes son estimaciones históricas no verificadas,
+> no precios vigentes ni autorización de gasto. El estado operativo está en README y
+> [guía14](14-OPERACION-MULTIFUENTE.md). No ejecutar esta propuesta como un setup aprobado.
+
 Cómo se usan varios modelos **sin** que sea "pedir once opiniones".
 
 ---

@@ -88,11 +88,13 @@ construir nada para él.
 
 - [x] Encuadre, alcance y límites.
 - [x] Especificación del bucle.
-- [x] Agenda de investigación con el hallazgo 0-day verificado.
+- [x] Contexto periodístico catalogado; estudio primario y validez biológica NO verificados.
 - [x] Arquitectura y orquestación.
 - [x] Finanzas, mercado, pitch y guía.
-- [ ] Recolector corriendo (siguiente).
+- [x] Recolectores HN y RSS públicos construidos; corridas finitas, no daemon permanente.
 - [ ] Conjunto dorado de 50 señales.
 - [ ] Primer informe público.
 
-**El siguiente paso no es pensar más. Es `ollama pull` y el primer recolector.**
+**Siguiente paso vigente:** revisión humana y decisiones de modelos/operación de la
+[guía14](14-OPERACION-MULTIFUENTE.md). No descargar modelos ni activar las direcciones
+históricas por inferencia; los recolectores de metadatos ya existen.

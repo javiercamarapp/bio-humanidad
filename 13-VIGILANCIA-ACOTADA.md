@@ -1,6 +1,8 @@
 # 13 — Vigilancia pública acotada
 
-`bio.vigilar` coordina el recolector HN/Algolia y la preparación offline. No es
+`bio.vigilar` coordina HN/Algolia por defecto y la preparación offline. Opcionalmente
+`--fuentes cdc ecdc` selecciona feeds RSS; véase [guía14](14-OPERACION-MULTIFUENTE.md)
+para procedencia, límites y antigüedad. No combinar esa opción con `--sin-red`. No es
 investigación científica autónoma: no genera hipótesis, etiquetas humanas ni alertas,
 no llama modelos, no publica y no desbloquea `bio.bucle`.
 
