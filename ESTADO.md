@@ -112,9 +112,15 @@ se modifica facturación, visibilidad, permisos o identidad. La rama remota se c
 antes del push no forzado y se valida el SHA exacto antes de integrar.
 
 CI histórico de `5b67f62`: [35464112714](https://github.com/javiercamarapp/bio-humanidad/actions/runs/35464112714),
-**164 pruebas OK en Python 3.9 y 3.12**. CI de las nuevas 171 pruebas: pendiente de push y
-comprobación remota. El verde local no sustituye al CI. Tras integrar se exige también
-el workflow de `main`; consultar [Actions](https://github.com/javiercamarapp/bio-humanidad/actions/workflows/tests.yml).
+**164 pruebas OK en Python 3.9 y 3.12**. CI del nuevo código `2145079`:
+[35466883303](https://github.com/javiercamarapp/bio-humanidad/actions/runs/35466883303),
+**success**. `gh run view 35466883303 --log` muestra `Ran 171 tests` / `OK` en ambos jobs
+(3.9: 11.977 s; 3.12: 12.129 s). No es una inferencia del verde local.
+
+La PR sigue **OPEN / draft**: no hubo integración; `main` permanece en `18b7088`.
+El último control de persistencia requiere revisión independiente antes de integrar.
+Si se autoriza y supera ese paso, comprobar también el workflow de `main` en
+[Actions](https://github.com/javiercamarapp/bio-humanidad/actions/workflows/tests.yml).
 
 ## Privacidad y presupuesto
 
