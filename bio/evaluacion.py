@@ -97,6 +97,7 @@ def evaluar(dorado: list[dict], predicciones: list[dict]) -> dict:
             vistos.add(p['id'])
 
     invalidas = desconocidas = abstenciones = respondidas = correctas = 0
+    invalidas_esquema = huellas_incompatibles = 0
     matriz = Counter()
     soporte = Counter(real for real, _ in referencia.values())
     predichas = Counter()
@@ -104,6 +105,7 @@ def evaluar(dorado: list[dict], predicciones: list[dict]) -> dict:
     for p in predicciones:
         if not _prediccion_valida(p):
             invalidas += 1
+            invalidas_esquema += 1
             continue
         if p['id'] not in referencia:
             desconocidas += 1
@@ -111,6 +113,7 @@ def evaluar(dorado: list[dict], predicciones: list[dict]) -> dict:
         real, huella = referencia[p['id']]
         if p['sha256_senal'].lower() != huella:
             invalidas += 1
+            huellas_incompatibles += 1
             continue
         if p['abstencion']:
             abstenciones += 1
@@ -146,11 +149,15 @@ def evaluar(dorado: list[dict], predicciones: list[dict]) -> dict:
         'abstenciones': abstenciones,
         'ausentes': len(referencia.keys() - vistos),
         'invalidas': invalidas,
+        'invalidas_esquema': invalidas_esquema,
+        'huellas_incompatibles': huellas_incompatibles,
         'desconocidas': desconocidas,
         'cobertura': respondidas / total,
         'exactitud_global': correctas / total,
         'exactitud_selectiva': correctas / respondidas if respondidas else None,
         'tasa_esquema_invalido': (
+            invalidas_esquema / total_predicciones if total_predicciones else None),
+        'tasa_predicciones_invalidas': (
             invalidas / total_predicciones if total_predicciones else None),
         'matriz_confusion': [
             {'real': real, 'predicha': predicha, 'conteo': matriz[real, predicha]}

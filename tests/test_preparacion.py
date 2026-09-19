@@ -128,6 +128,19 @@ class PreparacionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ejecutar(link, self.output, self.cutoff)
 
+    def test_codigo_cambia_durante_corrida_no_emite_manifiesto_final(self):
+        with mock.patch('bio.preparacion.huellas_codigo',
+                        side_effect=[{'codigo': 'antes'}, {'codigo': 'despues'}], create=True):
+            with self.assertRaisesRegex(ValueError, 'código'):
+                self.run_pipeline()
+        self.assertFalse((self.output / 'manifest.json').exists())
+
+    def test_fallo_de_escritura_no_deja_manifiesto_de_exito(self):
+        with mock.patch('bio.preparacion.radar.preparar', side_effect=OSError('fixture de disco lleno')):
+            with self.assertRaises(OSError):
+                self.run_pipeline()
+        self.assertFalse((self.output / 'manifest.json').exists())
+
     def test_cli_salida_completa_sin_afirmar_validacion(self):
         result = subprocess.run([sys.executable, '-m', 'bio.preparacion',
                                  '--entrada', str(self.input), '--salida', str(self.output),

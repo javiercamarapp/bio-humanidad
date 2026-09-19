@@ -91,7 +91,10 @@ class EvaluacionTests(unittest.TestCase):
         self.assertEqual(r['ausentes'], 1)
         self.assertEqual(r['respondidas'], 46)
         self.assertEqual(r['correctas'], 46)
-        self.assertEqual(r['tasa_esquema_invalido'], 6 / 53)
+        self.assertEqual(r['invalidas_esquema'], 4)
+        self.assertEqual(r['huellas_incompatibles'], 2)
+        self.assertEqual(r['tasa_predicciones_invalidas'], 6 / 53)
+        self.assertEqual(r['tasa_esquema_invalido'], 4 / 53)
         self.assertEqual(r['cobertura'], 46 / 50)
 
     def test_duplicados_incluso_malformados_y_desconocidos(self):

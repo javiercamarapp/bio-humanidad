@@ -39,8 +39,9 @@ Límites de entrada: 10 MB y 5000 señales únicas.
 | `informe.md` | Resumen y límites explícitos |
 | `manifest.json` | Estado, hashes de artefactos/entrada/código y duración |
 
-El manifiesto se escribe al final. Una carpeta sin manifiesto final puede ser una
-corrida interrumpida: no se interpreta como éxito ni se sobrescribe automáticamente.
+El manifiesto se escribe al final. Si cambia el código durante la preparación, no se
+emite manifiesto final. Una carpeta sin él puede ser una corrida interrumpida: no se
+interpreta como éxito ni se sobrescribe automáticamente.
 
 ## Dos éxitos distintos
 
@@ -80,7 +81,10 @@ Duplicados de ID se rechazan en lugar de elegir la predicción favorable.
 - `exactitud_global`: aciertos / total de referencia, incluyendo ausencias y
   abstenciones en el denominador.
 - `exactitud_selectiva`: aciertos / respondidas; `null` cuando no respondió ninguna.
-- También reporta inválidas, desconocidas, abstenciones, ausentes, matriz de confusión
+- `tasa_esquema_invalido`: errores de forma / predicciones recibidas. Se separa de
+  `huellas_incompatibles` (predicciones de otro contenido), aunque ambas cuentan en
+  `invalidas` y `tasa_predicciones_invalidas`.
+- También reporta desconocidas, abstenciones, ausentes, matriz de confusión
   y precisión/recall por categoría. No se presenta precisión sin cobertura.
 
 Sin dorado no hay métricas de calidad real. Las pruebas sintéticas comprueban fórmulas

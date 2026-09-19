@@ -36,9 +36,15 @@ def jsonl(data: list[dict]) -> str:
     return ''.join(json.dumps(row, ensure_ascii=False, sort_keys=True, allow_nan=False) + '\n' for row in data)
 
 
+def huellas_codigo() -> dict:
+    paths = [Path(__file__), Path(radar.__file__), Path(extractor.__file__), Path(evaluacion.__file__)]
+    return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+
+
 def ejecutar(entrada: Path, salida: Path, corte: date, *, dorado: Path | None = None,
              cantidad: int = 50) -> dict:
     inicio = time.monotonic()
+    code_hashes = huellas_codigo()
     if salida.exists() or salida.is_symlink():
         raise FileExistsError('la carpeta de salida debe ser nueva: ' + str(salida))
     raw = leer_acotado(entrada)
@@ -96,7 +102,8 @@ def ejecutar(entrada: Path, salida: Path, corte: date, *, dorado: Path | None = 
     ])
     (salida / 'informe.md').write_text(report, encoding='utf-8')
     paths = sorted(path for path in salida.rglob('*') if path.is_file())
-    code_paths = [Path(__file__), Path(radar.__file__), Path(extractor.__file__), Path(evaluacion.__file__)]
+    if huellas_codigo() != code_hashes:
+        raise ValueError('el código cambió durante la preparación; salida no finalizada')
     manifest = dict(version=1, estado='PREPARACION_COMPLETA', estado_validacion=metrics['estado'],
                     publicable=False, senales=len(signals), predicciones=len(predictions),
                     categorias=dict(sorted(summary.items())), muestra=cantidad,
@@ -104,7 +111,7 @@ def ejecutar(entrada: Path, salida: Path, corte: date, *, dorado: Path | None = 
                     entrada_sha256=hashlib.sha256(raw).hexdigest(), dorado_sha256=gold_hash,
                     entrada_normalizada_sha256=radar.digest(signals),
                     corte_exclusivo_utc=corte.isoformat(), reglas=extractor.ORIGEN,
-                    codigo_sha256={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in code_paths},
+                    codigo_sha256=code_hashes,
                     artefactos_sha256={str(p.relative_to(salida)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
                     llamadas_red=0, llamadas_modelo=0, gasto_api_usd=0,
                     creado_en=datetime.now(timezone.utc).isoformat(),
