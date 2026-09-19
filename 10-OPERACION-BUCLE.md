@@ -80,7 +80,10 @@ python3 -m bio.bucle --reanudar salidas/bucle/ID_DE_CORRIDA
 ```
 
 Se utiliza la configuración original. Las opciones de presupuesto/red nuevas no
-alteran una reanudación. Si cambias código, etiquetas o revisiones, comienza una
+alteran una reanudación. Cada ejecución mide tiempo con reloj monotónico; la
+reanudación conserva además el tiempo ya consumido y la última observación del reloj
+civil. Si este retrocede respecto al último checkpoint, se detiene con
+`RELOJ_RETROCEDIO` sin aceptar el intento pendiente. Si cambias código, etiquetas o revisiones, comienza una
 corrida nueva, sin `--reanudar`. No edites `config.json` para eludir las guardias.
 
 Modo sin consultas HTTP:

@@ -208,6 +208,54 @@ class BucleTests(unittest.TestCase):
         self.assertEqual(result['motivo_parada'], 'PRESUPUESTO')
         self.assertEqual(result['aceptadas'], 0)
 
+    def test_retroceso_reloj_en_ultimo_intento_no_acepta(self):
+        dorado_sintetico(self.root)
+        self.candidate()
+        now = [1000.0]
+
+        def rollback(*args):
+            now[0] = 999.0
+            return {'estado': 'ACEPTADA', 'motivos': []}
+
+        with mock.patch.object(bucle.time, 'time', side_effect=lambda: now[0]), \
+                mock.patch.object(bucle, 'evaluar_subproceso', side_effect=rollback):
+            result = self.run_loop(max_segundos=1)
+        self.assertEqual(result['motivo_parada'], 'RELOJ_RETROCEDIO')
+        self.assertEqual(result['aceptadas'], 0)
+
+    def test_reloj_civil_congelado_no_extiende_presupuesto(self):
+        dorado_sintetico(self.root)
+        self.candidate()
+        monotonic = [100.0]
+
+        def slow(*args):
+            monotonic[0] += 5
+            return {'estado': 'ACEPTADA', 'motivos': []}
+
+        with mock.patch.object(bucle.time, 'time', return_value=1000.0), \
+                mock.patch.object(bucle.time, 'monotonic', side_effect=lambda: monotonic[0]), \
+                mock.patch.object(bucle, 'evaluar_subproceso', side_effect=slow):
+            result = self.run_loop(max_segundos=1)
+        self.assertEqual(result['motivo_parada'], 'PRESUPUESTO')
+        self.assertEqual(result['aceptadas'], 0)
+
+    def test_reanudar_detecta_reloj_anterior_al_ultimo_checkpoint(self):
+        dorado_sintetico(self.root)
+        self.candidate()
+        now = [1000.0]
+
+        def advance(*args):
+            now[0] = 1020.0
+            return {'estado': 'RECHAZADA', 'motivos': []}
+
+        with mock.patch.object(bucle.time, 'time', side_effect=lambda: now[0]), \
+                mock.patch.object(bucle, 'evaluar_subproceso', side_effect=advance):
+            first = self.run_loop(max_segundos=100)
+            now[0] = 1010.0
+            result = self.run_loop(reanudar=Path(first['corrida']))
+        self.assertEqual(result['motivo_parada'], 'RELOJ_RETROCEDIO')
+        self.assertGreaterEqual(result['tiempo_consumido'], first['tiempo_consumido'])
+
     def test_snapshot_incompleto_no_cuenta_como_aceptado(self):
         dorado_sintetico(self.root)
         first = self.run_loop()

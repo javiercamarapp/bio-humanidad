@@ -180,14 +180,36 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             if config['root'] != str(root):
                 raise ValueError('la corrida pertenece a otro proyecto')
         attempts = cargar_intentos(run)
+        wall_anchor = time.time()
+        monotonic_anchor = time.monotonic()
+        previous = {}
+        if (run / 'estado.json').exists():
+            sin_enlaces(run / 'estado.json', root)
+            if (run / 'estado.json').stat().st_size == 0:
+                raise ValueError('estado vacío: posible placeholder')
+            previous = json.loads((run / 'estado.json').read_text())
+        elapsed_anchor = max(0, wall_anchor - config['inicio'], previous.get('tiempo_consumido', 0))
+        last_wall = max(config['inicio'], previous.get('ultima_observacion_reloj', config['inicio']))
+        rollback = wall_anchor < last_wall
+
+        def tiempos():
+            nonlocal last_wall, rollback
+            now = time.time()
+            rollback = rollback or now < last_wall
+            last_wall = max(last_wall, now)
+            elapsed = max(now - config['inicio'],
+                          elapsed_anchor + time.monotonic() - monotonic_anchor)
+            return elapsed, rollback
 
         def finish(reason, details=()):
+            elapsed, _ = tiempos()
             accepted = sum(a['estado'] == 'ACEPTADA' for a in attempts)
             report = dict(corrida=str(run), motivo_parada=reason, detalles=list(details),
                           vueltas=len(attempts), aceptadas=accepted,
                           no_aceptadas=len(attempts) - accepted,
                           estados={s: sum(a['estado'] == s for a in attempts) for s in sorted(ESTADOS)},
-                          segundos_transcurridos=round(time.time() - config['inicio'], 3),
+                          segundos_transcurridos=round(elapsed, 3), tiempo_consumido=elapsed,
+                          ultima_observacion_reloj=last_wall,
                           gasto_api_usd=0, proceso_activo=None if reason == 'EN_CURSO' else False,
                           limites={k: config[k] for k in ('max_vueltas', 'max_segundos', 'sin_mejora', 'timeout_vuelta')})
             json_atomico(run / 'estado.json', report)
@@ -219,8 +241,8 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             blocked = guardias()
             if blocked:
                 return finish(*blocked)
-            elapsed = time.time() - config['inicio']
-            if elapsed < 0:
+            elapsed, backward = tiempos()
+            if backward:
                 return finish('RELOJ_RETROCEDIO')
             remaining = config['max_segundos'] - elapsed
             if len(attempts) >= config['max_vueltas'] or remaining <= 0:
@@ -253,7 +275,10 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             blocked = guardias()
             if blocked:
                 return finish(*blocked)  # El snapshot incompleto no cuenta como aceptado.
-            if time.time() - config['inicio'] >= config['max_segundos']:
+            elapsed, backward = tiempos()
+            if backward:
+                return finish('RELOJ_RETROCEDIO')
+            if elapsed >= config['max_segundos']:
                 result = dict(estado='ERROR', motivos=['presupuesto de tiempo agotado durante intento'])
             result.update(numero=number, sha256=digest, candidato=candidate.name)
             json_atomico(pending / 'registro.json', result)
@@ -264,7 +289,10 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             finish('EN_CURSO')  # Checkpoint; proceso_activo no es un detector de PID.
             if result['estado'] in {'ESCALAR_HUMANO', 'PENDIENTE_HUMANO', 'PENDIENTE_RED'}:
                 return finish(result['estado'], result['motivos'])
-        if len(attempts) >= config['max_vueltas'] or time.time() - config['inicio'] >= config['max_segundos']:
+        elapsed, backward = tiempos()
+        if backward:
+            return finish('RELOJ_RETROCEDIO')
+        if len(attempts) >= config['max_vueltas'] or elapsed >= config['max_segundos']:
             return finish('PRESUPUESTO')
         if no_improvement >= config['sin_mejora']:
             return finish('AGOTAMIENTO')
