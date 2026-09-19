@@ -1,5 +1,8 @@
 """Confirmación bajo fallos: SOLO fixtures sintéticos temporales, sin red."""
 import json
+import subprocess
+import sys
+import time
 from pathlib import Path
 import tempfile
 import unittest
@@ -189,6 +192,51 @@ class ConfirmacionTests(unittest.TestCase):
             result = bucle.ejecutar(root, sin_red=True)
             with self.assertRaisesRegex(ValueError, 'arranque'):
                 bucle.ejecutar(root, reanudar=Path(result['corrida']))
+
+    def test_reloj_legacy_no_se_reinterpreta_al_reanudar(self):
+        root = self.caso('reloj-legacy', 0)
+        result = bucle.ejecutar(root, sin_red=True)
+        run = Path(result['corrida'])
+        config = json.loads((run / 'config.json').read_text())
+        del config['reloj_monotonico']
+        (run / 'config.json').write_text(json.dumps(config))
+        with self.assertRaisesRegex(ValueError, 'reloj antiguo'):
+            bucle.ejecutar(root, reanudar=run)
+
+    def test_reloj_persistible_usa_origen_del_sistema(self):
+        before = time.clock_gettime(time.CLOCK_MONOTONIC)
+        observed = bucle.time.monotonic()
+        after = time.clock_gettime(time.CLOCK_MONOTONIC)
+        self.assertLessEqual(before, observed)
+        self.assertLessEqual(observed, after)
+
+    def test_reanudacion_real_entre_procesos_con_distinta_edad(self):
+        script = '''import json,sys,time
+from pathlib import Path
+from bio import bucle
+root=Path(sys.argv[1])
+if len(sys.argv)==2:
+    time.monotonic()
+    time.sleep(1)
+    result=bucle.ejecutar(root,sin_red=True,max_segundos=30)
+else:
+    result=bucle.ejecutar(root,reanudar=Path(sys.argv[2]))
+print(json.dumps(result))
+'''
+        root = self.root / 'entre-procesos'
+        command = [sys.executable, '-c', script, str(root)]
+        first = subprocess.run(command, capture_output=True, text=True, timeout=10,
+                               cwd=Path(bucle.__file__).resolve().parent.parent)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        initial = json.loads(first.stdout)
+        second = subprocess.run(command + [initial['corrida']], capture_output=True,
+                                text=True, timeout=10,
+                                cwd=Path(bucle.__file__).resolve().parent.parent)
+        self.assertEqual(second.returncode, 0, second.stderr)
+        resumed = json.loads(second.stdout)
+        self.assertEqual(resumed['motivo_parada'], 'DORADO_PENDIENTE')
+        self.assertGreaterEqual(resumed['tiempo_consumido'], initial['tiempo_consumido'])
+        self.assertEqual(resumed['aceptadas'], 0)
 
     def test_cancelacion_tras_unlink_no_recupera_aceptacion(self):
         root = self.caso('cancelacion')

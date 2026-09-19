@@ -81,7 +81,12 @@ python3 -m bio.bucle --reanudar salidas/bucle/ID_DE_CORRIDA
 
 Se utiliza la configuración original. Las opciones de presupuesto/red nuevas no
 alteran una reanudación. Se conserva el origen monotónico de la corrida, no solo el
-último checkpoint: un fallo de escritura no devuelve tiempo al reanudar. Se verifica
+último checkpoint: un fallo de escritura no devuelve tiempo al reanudar. Se usa
+`clock_gettime(CLOCK_MONOTONIC)` mediante `bio.reloj`, con origen común entre procesos
+en macOS/Linux. No se persiste `time.monotonic()` directamente: en Python 3.9 de
+macOS su origen es privado al proceso. La configuración declara `reloj_monotonico`;
+una corrida anterior sin esa declaración no se reinterpreta ni migra automáticamente.
+Se verifica
 el identificador de arranque (Linux `/proc/sys/kernel/random/boot_id`; macOS
 `kern.bootsessionuuid`). Otro arranque, un origen inválido o una corrida antigua sin
 esa información bloquean reanudación y requieren inspección, sin reiniciar el presupuesto.

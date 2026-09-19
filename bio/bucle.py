@@ -15,9 +15,9 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-import time
 import uuid
 
+from bio import reloj as time
 from bio.json_estricto import cargar
 from bio.validador.validar import leer_texto
 
@@ -65,7 +65,8 @@ def huellas_protegidas(root: Path) -> dict:
         if path.exists():
             paths.add(path)
     # Incluye el código efectivamente ejecutado también en pruebas con un root temporal.
-    for path in (CODIGO / 'bucle.py', CODIGO / 'validador/validar.py', CODIGO / 'json_estricto.py'):
+    for path in (CODIGO / 'bucle.py', CODIGO / 'reloj.py',
+                 CODIGO / 'validador/validar.py', CODIGO / 'json_estricto.py'):
         paths.add(path)
     return {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 
@@ -190,7 +191,8 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
             raise ValueError('otra ejecución posee el bloqueo de esta corrida')
         if reanudar is None:
             config.update(inicio=time.time(), inicio_monotonic=time.monotonic(),
-                          arranque=id_arranque(), protegidos=huellas_protegidas(root), root=str(root))
+                          reloj_monotonico='CLOCK_MONOTONIC', arranque=id_arranque(),
+                          protegidos=huellas_protegidas(root), root=str(root))
             json_atomico(run / 'config.json', config)
             (run / 'intentos').mkdir()
         else:
@@ -202,6 +204,8 @@ def ejecutar(root: Path, *, max_vueltas=200, max_segundos=900, sin_mejora=25,
                 raise ValueError('la corrida pertenece a otro proyecto')
             if config.get('arranque') != id_arranque():
                 raise ValueError('arranque distinto o no verificable; inspección manual requerida')
+            if config.get('reloj_monotonico') != 'CLOCK_MONOTONIC':
+                raise ValueError('origen de reloj antiguo o no verificable; inspección manual requerida')
         attempts = cargar_intentos(run)
         if reanudar is not None and attempts and attempts[-1]['estado'] == 'ACEPTADA':
             # Ausencia de marcador no prueba que el último cierre terminó sin error.
