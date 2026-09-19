@@ -1,5 +1,31 @@
 # Programa de ejecución — fase operativa
 
+## Tanda de continuación — 2026-09-19, 18:54 UTC
+
+Alcance: terminar `bio.vigilar` (ingesta pública y preparación, no investigación).
+Presupuesto de construcción: máximo 3 cambios funcionales, 35 minutos, USD 0 en APIs;
+parada tras 2 intentos consecutivos sin mejora, conflicto concurrente o permisos.
+Métrica fija: fallos de `python3 -m unittest discover -s tests -v`, dirección descendente;
+reproducción inicial del vigilante: 16 pruebas, 1 fallo de suspensión. No se borran,
+debilitan ni saltan pruebas existentes. Se añaden regresiones antes de nuevos arreglos.
+Guardias: datos/revisiones humanos intactos, `publicable:false`, sin modelos ni alertas.
+Mutables: `bio/vigilar.py`, regresiones nuevas y documentación de uso/evidencia.
+Reversión: retirar únicamente el parche propio fallido; preservar los dos archivos
+previos no versionados y todos los resultados, nunca reset destructivo.
+Operación posterior a suite verde y revisión de límites: máximo una corrida de red,
+1 vuelta / 90 segundos; hasta 2 corridas offline de 2 vueltas / 10 segundos.
+No ejecutar el vigilante mientras se edita código. Cada corrida usa carpeta nueva;
+no inventar reanudación: el vigilante no la soporta, `bio.bucle` sí.
+Commits sustantivos, push no forzado y PR están autorizados por el traspaso. Remoto
+comprobado PUBLIC, main y feat/radar-reproducible en `18b7088`; no cambiar identidad,
+permisos, facturación ni visibilidad. Los límites de no publicación automática de
+candidatos del programa original siguen vigentes. Registrar resultado y parada en
+`ESTADO.md`. Revisión de código: un evaluador con contexto limpio mediante Codex
+(sesión existente ChatGPT, sin API key), máximo una invocación, concurrencia 1,
+4 minutos, sin reintentos ni cambios de código. No es un componente del radar.
+La cuenta puede consumir su cuota existente; no se cambia facturación ni se contrata
+capacidad adicional. Sin revisor disponible, declarar la revisión pendiente.
+
 ## Objetivo de esta sesión
 Implementar y probar un consumidor acotado de candidatos, no un descubridor autónomo.
 Orden: pruebas de regresión → validador conservador → bucle persistente → pruebas
