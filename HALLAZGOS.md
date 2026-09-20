@@ -1,5 +1,23 @@
 # Hallazgos — continuación operativa
 
+## 2026-09-20 — integración local
+- Instalación autorizada y USD0 en APIs. Ollama0.34.2, Qwen27B conservado; modelos
+  Gemma4-12B y Qwen3.5-9B para perfil operativo de menor memoria.
+- Prueba27B: primer registro completó3 roles; segundo agotó180s en analista. Lote
+  ERROR sin manifiesto final. No se borró evidencia ni se amplió el plazo para verde.
+- Perfil menor:2 señales reales fuera de ambos paquetes ciegos,6 solicitudes,
+  92.85s, pipeline completo técnicamente/no publicable. Hashes cotejados.
+- Muestreo del servidor: máximo1 modelo cargado,7.83GB de tamaño reportado. Esto no
+  certifica memoria residente total ni calidad. La primera prueba sintética de
+  Gemma se abstuvo: no convertir una respuesta válida en prueba de precisión.
+- Presupuesto enmendado ANTES de segunda descarga por fallo observado: máximo2
+  modelos nuevos y<15GB en total; tiempo60min/12 solicitudes/USD0 sin ampliar.
+  Gastadas12 solicitudes reales (1 prueba,5 en fallo,6 en lote completo).
+- RPC hijos limitados, sin proxy/redirect/cloud/pull. Alias no simulan independencia;
+  schema/citas/identidad incompletos abortan. Defaults offline anteriores intactos.
+- 223 pruebas por Python3.9/3.12. Las205 anteriores intactas por bytes; fixtures
+  humanos solo en temporales rotulados y sin contaminar los paquetes reales.
+
 ## 2026-09-19
 - Base main afa99ad: entrega previa183 pruebas, PR1 integrada. No volver a revisar ese
   mismo parche sin defecto nuevo; esta fase amplía capacidades de metadatos.

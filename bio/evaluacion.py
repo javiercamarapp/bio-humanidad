@@ -56,7 +56,7 @@ def _validar_dorado(dorado):
     return referencia
 
 
-def _prediccion_valida(p):
+def _prediccion_valida(p, origen_esperado='reglas_v1'):
     if not isinstance(p, dict):
         return False
     requeridos = ('id', 'sha256_senal', 'categoria_predicha', 'abstencion',
@@ -70,10 +70,10 @@ def _prediccion_valida(p):
             and (categoria is None or categoria in CATEGORIAS)
             and type(p['abstencion']) is bool
             and p['abstencion'] == (categoria is None)
-            and p['origen_prediccion'] == 'reglas_v1')
+            and p['origen_prediccion'] == origen_esperado)
 
 
-def evaluar(dorado: list[dict], predicciones: list[dict]) -> dict:
+def evaluar(dorado: list[dict], predicciones: list[dict], *, origen_esperado='reglas_v1') -> dict:
     """Mide clasificación frente al dorado, manteniendo todos los denominadores.
 
     Un ID string no vacío cuenta como presente incluso en un registro inválido,
@@ -85,6 +85,8 @@ def evaluar(dorado: list[dict], predicciones: list[dict]) -> dict:
     por_categoria contiene todas las categorías; la matriz solo celdas no cero,
     en el orden de CATEGORIAS. El registro humano no autentica al revisor.
     """
+    if origen_esperado not in ('reglas_v1', 'ollama_v1'):
+        raise ValueError('origen de predicciones no soportado')
     referencia = _validar_dorado(dorado)
     if not isinstance(predicciones, list):
         raise ValueError('predicciones debe ser una lista')
@@ -103,7 +105,7 @@ def evaluar(dorado: list[dict], predicciones: list[dict]) -> dict:
     predichas = Counter()
     verdaderos = Counter()
     for p in predicciones:
-        if not _prediccion_valida(p):
+        if not _prediccion_valida(p, origen_esperado):
             invalidas += 1
             invalidas_esquema += 1
             continue
