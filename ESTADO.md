@@ -1,4 +1,18 @@
-# Estado verificable — entrega técnica, 2026-09-19
+# Estado verificable — actualizado 2026-09-20
+
+## Última actualización: modelo local y GitHub
+
+La [PR #3](https://github.com/javiercamarapp/bio-humanidad/pull/3) está integrada en
+`main` como `d302cab`. GitHub atribuye el commit `070b7be` a `javiercamarapp`; no se
+cambió la identidad Git. La presencia en el gráfico de contribuciones no se verificó.
+
+Instalados con autorización Ollama 0.34.2 y Qwen3.6-27B Q4_K_M. Prueba local real:
+JSON válido, 4.01 tokens/s; presión de memoria/swap elevada. Modelo descargado de RAM
+y servidor temporal cerrado, pesos conservados. No se presenta como integración del
+extractor ni como el mejor modelo demostrado. Detalle y reproducción:
+[15-MODELO-LOCAL.md](15-MODELO-LOCAL.md). USD 0 en APIs de pago.
+
+El historial siguiente conserva la evidencia de las etapas anteriores.
 
 ## Qué entrega el software
 
@@ -32,8 +46,9 @@ originales intactas. El vigilante real se detuvo en MAX_VUELTAS; esta corrida pr
 al chequeo adicional de hash del snapshot, probado después con fixtures y hashes reales.
 
 Se añadieron22 pruebas sin alterar las183 anteriores. No existe todavía integración
-real con Ollama (no instalado/no disponible), ni clientes de analista/refutador. Esos
-componentes requieren definir/autorizarlos; tener prompts históricos no los completa.
+del extractor con Ollama, ni clientes de analista/refutador. La instalación local ya
+está autorizada y probada por separado (guía15); los clientes y su evaluación siguen
+pendientes. Tener prompts históricos o un modelo instalado no los completa.
 El detector actual no satisface automáticamente feeds semanales tras esperar90 días:
 hay una decisión de cobertura/calibración de dominio pendiente, no solo tiempo faltante.
 
