@@ -37,6 +37,8 @@ no sobrescribe resultados anteriores.
 | `bio.historial` | Unión offline con procedencia; no fabrica días ni etiquetas |
 | `bio.radar` | Normalización, muestra ciega y comparación léxica; se abstiene sin historia suficiente |
 | `bio.extractor` | Reglas versionadas; evidencia literal y abstención, no un LLM |
+| `bio.pipeline_local` | Extractor LLM y análisis/refutación documentales opt-in; familias distintas, sin aprobar ciencia |
+| `bio.ollama_local` | Cliente loopback acotado; identidad, esquema y citas comprobados, sin pull ni cloud |
 | `bio.evaluacion` | Cobertura, exactitud global/selectiva, errores de esquema y hashes incompatibles |
 | `bio.preparacion` | Pipeline offline con snapshots, reporte y hashes de artefactos/código |
 | `bio.dorado` | Comprueba e importa revisiones realmente completadas, con confirmación explícita |
@@ -94,6 +96,25 @@ permite unir corridas sin sustituir observación por publicación. Instrucciones
 pendientes humanos: [14-OPERACION-MULTIFUENTE.md](14-OPERACION-MULTIFUENTE.md).
 No hay cron instalado ni proceso indefinido. HN continúa como opción predeterminada.
 
+## Modelos locales — opcionales y explícitos
+
+Con Ollama local y los modelos instalados de forma autorizada:
+
+```bash
+python3 -m bio.pipeline_local \
+  --entrada salidas/historial/acumulado-001/senales.jsonl \
+  --salida salidas/modelos/lote-001 \
+  --extractor gemma4:12b --analista qwen3.5:9b --refutador gemma4:12b \
+  --cantidad 3 --max-segundos 600
+```
+
+Reemplazar la entrada por una existente. No activa modelos en el recolector ni cambia
+la demo offline. Hay STOP, presupuesto, comprobación de identidad y formatos cerrados.
+Los roles son **documentales sobre titulares**, no validación de anomalías científicas.
+Operación real, fallos conservados, memoria y evaluación: [guía16](16-PIPELINE-LOCAL.md).
+Sin revisión humana no se mide calidad. El modelo27B instalado resultó demasiado pesado
+para el lote ensayado; el perfil menor completó dos señales con6 solicitudes reales.
+
 ## Revisión humana — no se salta
 
 ```bash
@@ -129,10 +150,11 @@ checkpoints y paradas: [10-OPERACION-BUCLE.md](10-OPERACION-BUCLE.md).
 ## Lo que falta y lo que está fuera de alcance
 
 **Pendiente:** datos humanos reales, historia suficiente y política de cobertura por
-frecuencia de fuente, calibración retrospectiva, extractor por modelo local, analista
-y refutador. Los clientes de modelos y su verificación dependen aún de autorizar
-instalación/proveedores/presupuesto; no están implementados por tener prompts escritos. No se presentan
-componentes pendientes como si ya corrieran.
+frecuencia de fuente y calibración retrospectiva. El extractor LLM y los roles
+**documentales locales** están implementados, pero su calidad no está medida contra
+etiquetas humanas. Los analistas de anomalías/modelos frontera del diseño histórico
+NO quedan implementados por estos roles: necesitarían datos, evaluación y decisiones
+separadas. No se habilitan APIs pagadas ni se sustituyen revisiones científicas.
 
 **Fuera de alcance:** mejora de patógenos, síntesis, secuencias, predicción de
 peligrosidad, selección de variantes funcionales/evasivas y optimización de evasión
@@ -182,6 +204,8 @@ convierte contenido externo en MIT. El historial de Git incluye nombre y correo 
 - [Revisión humana](12-REVISION-HUMANA.md)
 - [Vigilancia pública acotada](13-VIGILANCIA-ACOTADA.md)
 - [Fuentes, historial y pendientes humanos](14-OPERACION-MULTIFUENTE.md)
+- [Modelo27B: prueba y límites](15-MODELO-LOCAL.md)
+- [Pipeline documental local](16-PIPELINE-LOCAL.md)
 - [Contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) · [Licencia](LICENSE)
 
 Autor: Javier Cámara Portepetit · [GitHub](https://github.com/javiercamarapp)

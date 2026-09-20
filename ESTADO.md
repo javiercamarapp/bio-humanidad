@@ -1,6 +1,24 @@
 # Estado verificable — actualizado 2026-09-20
 
-## Última actualización: modelo local y GitHub
+## Última actualización: integración documental local
+
+`bio.pipeline_local` conecta extractor, analista documental y refutador de otra familia,
+con Ollama local, citas literales, presupuestos, STOP, hashes y evaluación opcional.
+El flujo por defecto de recolección/preparación sigue sin modelos. No crea hipótesis
+científicas ni sustituye los modelos frontera del diseño histórico.
+
+Prueba real del perfil Gemma4-12B / Qwen3.5-9B:2 señales fuera de los paquetes ciegos,
+6 solicitudes,92.85s, `PIPELINE_LOCAL_COMPLETO`, `PENDIENTE_DORADO`, no publicable.
+Durante el muestreo,1 modelo cargado como máximo y7.83GB de tamaño máximo reportado.
+El intento previo con27B falló por timeout en la quinta solicitud; quedó ERROR sin
+manifiesto final. Ambos resultados se conservan, no se afirma calidad científica.
+Guía, campos, límites y reproducción: [16-PIPELINE-LOCAL.md](16-PIPELINE-LOCAL.md).
+
+El recolector anterior se detuvo por STOP tras2 vueltas/0 errores antes de editar código.
+La instalación previa y el historial siguiente describen etapas anteriores, no un
+servidor o una corrida que se pueda suponer activa por leer este archivo.
+
+## Etapa anterior: instalación del modelo y GitHub
 
 La [PR #3](https://github.com/javiercamarapp/bio-humanidad/pull/3) está integrada en
 `main` como `d302cab`. GitHub atribuye el commit `070b7be` a `javiercamarapp`; no se
@@ -25,7 +43,8 @@ revisión/importación humana, evaluación por hashes y ejecución acotada.
 - `bio.bucle` consume candidatos existentes, no los genera. Sus guardias humanas,
   presupuestos, historial y reanudación son independientes del vigilante.
 - Demo y pruebas funcionan con biblioteca estándar, Python 3.9+/macOS/Linux o WSL.
-- No usa modelos, no valida ciencia ni publica alertas. Código/documentación propia MIT;
+- El modo por defecto no usa modelos; el pipeline local es opt-in. Ninguno valida
+  ciencia ni publica alertas. Código/documentación propia MIT;
   los contenidos de terceros conservan sus derechos.
 
 Guías: [README](README.md), [bucle](10-OPERACION-BUCLE.md),
@@ -45,10 +64,9 @@ preparación no publicable,50 casos ciegos pendientes. Hashes comprobados y fuen
 originales intactas. El vigilante real se detuvo en MAX_VUELTAS; esta corrida precedió
 al chequeo adicional de hash del snapshot, probado después con fixtures y hashes reales.
 
-Se añadieron22 pruebas sin alterar las183 anteriores. No existe todavía integración
-del extractor con Ollama, ni clientes de analista/refutador. La instalación local ya
-está autorizada y probada por separado (guía15); los clientes y su evaluación siguen
-pendientes. Tener prompts históricos o un modelo instalado no los completa.
+Esa etapa añadió22 pruebas sin alterar las183 anteriores. La integración local
+posterior ya conecta extractor y revisión documental (guía16); su calidad humana y
+los modelos frontera científicos no quedan validados por la instalación o los tests.
 El detector actual no satisface automáticamente feeds semanales tras esperar90 días:
 hay una decisión de cobertura/calibración de dominio pendiente, no solo tiempo faltante.
 
@@ -60,7 +78,8 @@ python3.12 -m unittest discover -s tests -v
 python3 -m unittest discover -s tests -p test_flujo_completo.py -v
 ```
 
-Última verificación local: **205 pruebas, OK en Python 3.9.6 y 3.12.14**. No se borró, debilitó ni
+Última verificación local: **223 pruebas, OK en Python 3.9.6 y 3.12.14**.
+Se añadieron18 pruebas locales y se conservaron por bytes las205 anteriores. No se borró, debilitó ni
 saltó ninguna prueba anterior. El E2E usa comandos CLI reales en un temporal:
 
 1. Demo sintética sin red → preparación y hashes íntegros.
@@ -253,7 +272,8 @@ se conservaron en el directorio local de evidencia indicado arriba.
 - **50 etiquetas humanas reales**: el paquete está preparado, la revisión no realizada.
 - Verdad científica, descubrimientos, curas, amenazas o alertas sanitarias.
 - Historia multifuente suficiente, calibración retrospectiva o calidad del extractor.
-- Extractor por modelo, analista y refutador: no forman parte de esta entrega construida.
+- Calidad del extractor LLM y de los roles documentales; análisis de anomalías por
+  modelos frontera y validación científica: no demostrados por el pipeline local.
 - Suspensión física del Mac: los saltos de reloj se simulan; STOP, SIGTERM, SIGKILL y
   timeout sí tienen pruebas con procesos reales.
 - Persistencia perfecta ante apagado/disco averiado: un checkpoint puede quedar
